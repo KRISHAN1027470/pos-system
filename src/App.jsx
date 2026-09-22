@@ -1122,6 +1122,13 @@ function PrivateApp() {
             );
           })}
         </nav>
+
+        <div style={{ marginTop: "auto", padding: "14px 12px", fontSize: "12px", lineHeight: 1.5, opacity: 0.9 }}>
+          <div style={{ fontWeight: 700 }}>Need help with LE POS?</div>
+          <a href="tel:+94769696491" style={{ color: "inherit", textDecoration: "none", fontWeight: 800 }}>
+            Support: 076 969 6491
+          </a>
+        </div>
       </aside>
 
       <main className="main-content">

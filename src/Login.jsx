@@ -243,7 +243,7 @@ export default function Login() {
           <p>
             {mode === "signin"
               ? "Sign in to continue to your business dashboard."
-              : "Create your LE POS owner account and set up your business."}
+              : "Create your Point Of Sale owner account and set up your business."}
           </p>
         </div>
 

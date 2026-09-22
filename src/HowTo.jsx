@@ -192,7 +192,7 @@ export default function HowTo() {
       <div className="howto-header">
         <div>
           <h1>How To</h1>
-          <p>Quick user guide for the LE POS system.</p>
+          <p>Quick user guide for the Point Of Sale system.</p>
         </div>
         <BookOpen size={32} />
       </div>

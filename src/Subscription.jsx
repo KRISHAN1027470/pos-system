@@ -317,6 +317,16 @@ export default function Subscription({ subscription, onActivated }) {
         </button>
       </form>
 
+      <div style={{ ...cardStyle, marginBottom: 24, border: "1px solid #dbeafe", background: "#f8fbff" }}>
+        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Need Help?</h2>
+        <p style={{ color: "#475467", margin: "0 0 12px", lineHeight: 1.6 }}>
+          If you have any questions about the system or experience any issue related to the POS system, please contact us.
+        </p>
+        <a href="tel:+94769696491" style={{ fontWeight: 800, color: "#111827", textDecoration: "none", fontSize: 17 }}>
+          POS Support: 076 969 6491
+        </a>
+      </div>
+
       <div style={cardStyle}>
         <h2 style={{ marginTop: 0 }}>Payment History</h2>
         {loading ? (
