@@ -267,26 +267,28 @@ function PrivateApp() {
   }, [session?.user?.id, profile?.company_id]);
 
   useEffect(() => {
-    async function loadProfileCompanyName() {
+    async function loadPosSidebarName() {
       if (!profile?.company_id) return;
 
       const { data, error } = await supabase
-        .from("companies")
+        .from("app_settings")
         .select("company_name")
-        .eq("id", profile.company_id)
+        .eq("company_id", profile.company_id)
         .maybeSingle();
 
       if (error) {
-        console.error("Company load error:", error);
+        console.error("POS / Sidebar name load error:", error);
         return;
       }
 
       if (data?.company_name?.trim()) {
         setCompanyName(data.company_name.trim());
+      } else {
+        setCompanyName("LE POS");
       }
     }
 
-    loadProfileCompanyName();
+    loadPosSidebarName();
   }, [profile?.company_id]);
 
   const allowedMenuItems = useMemo(() => {
