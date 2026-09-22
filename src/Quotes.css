@@ -1,0 +1,630 @@
+.quotes-page {
+  padding: 24px;
+}
+
+.quotes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.quotes-header h2 {
+  margin: 0;
+}
+
+.quotes-header p {
+  margin: 6px 0 0;
+  opacity: 0.7;
+}
+
+.quote-type-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.quote-type-toggle button,
+.quote-modal-toolbar button {
+  border: 1px solid #d7dce5;
+  background: white;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.quote-type-toggle button.active {
+  background: #111827;
+  color: white;
+  border-color: #111827;
+}
+
+.quotes-layout {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 20px;
+}
+
+.quote-builder-card,
+.quote-cart-card,
+.quotes-list-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.quote-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.quote-form-grid label,
+.quote-notes label,
+.quote-cart-controls label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 6px;
+  opacity: 0.75;
+}
+
+.quote-form-grid select,
+.quote-form-grid input,
+.quote-notes textarea,
+.quote-cart-controls input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d8dde6;
+  border-radius: 9px;
+  padding: 10px 11px;
+}
+
+.quote-product-search,
+.quote-history-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d8dde6;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.quote-product-search input,
+.quote-history-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+.quote-product-grid {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-height: 480px;
+  overflow: auto;
+}
+
+.quote-product-card {
+  text-align: left;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 13px;
+  cursor: pointer;
+}
+
+.quote-product-card strong,
+.quote-product-card span,
+.quote-product-card b,
+.quote-product-card small {
+  display: block;
+}
+
+.quote-product-card span,
+.quote-product-card small {
+  margin-top: 5px;
+  opacity: 0.7;
+}
+
+.quote-product-card b {
+  margin-top: 9px;
+}
+
+.quote-cart-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quote-cart-title h3 {
+  margin: 0;
+}
+
+.quote-cart-items {
+  margin-top: 14px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.quote-empty {
+  text-align: center;
+  padding: 40px 10px;
+  opacity: 0.6;
+}
+
+.quote-cart-item {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 13px 0;
+}
+
+.quote-cart-item-top,
+.quote-cart-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quote-cart-item-top span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.quote-remove-btn,
+.quote-qty button,
+.quote-view-btn {
+  border: none;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 7px;
+  cursor: pointer;
+}
+
+.quote-cart-controls {
+  margin-top: 10px;
+}
+
+.quote-cart-controls > div:nth-child(2) {
+  max-width: 110px;
+}
+
+.quote-qty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quote-summary {
+  margin-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 14px;
+}
+
+.quote-summary > div,
+.quote-print-summary > div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.quote-grand-total,
+.quote-print-total {
+  border-top: 1px solid #d1d5db;
+  padding-top: 10px;
+  font-size: 18px;
+}
+
+.quote-notes {
+  margin-top: 16px;
+}
+
+.create-quote-btn {
+  width: 100%;
+  border: none;
+  border-radius: 11px;
+  padding: 13px;
+  margin-top: 14px;
+  background: #111827;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-quote-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.quotes-list-card {
+  margin-top: 20px;
+}
+
+.quotes-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.quotes-list-header h3 {
+  margin: 0;
+}
+
+.quotes-list-header span {
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+.quote-history-search {
+  width: 280px;
+}
+
+.quote-table-wrapper {
+  overflow-x: auto;
+}
+
+.quote-table-wrapper table,
+.quote-print-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.quote-table-wrapper th,
+.quote-table-wrapper td,
+.quote-print-table th,
+.quote-print-table td {
+  text-align: left;
+  padding: 11px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.quote-status {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.quote-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.quote-modal {
+  background: white;
+  width: min(1000px, 96vw);
+  max-height: 92vh;
+  overflow: auto;
+  border-radius: 15px;
+}
+
+.quote-modal-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.quote-modal-toolbar h3 {
+  margin: 0;
+}
+
+.quote-modal-toolbar > div:last-child {
+  display: flex;
+  gap: 8px;
+}
+
+.print-quote {
+  padding: 30px;
+}
+
+.quote-print-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.quote-print-header h1,
+.quote-print-header h2 {
+  margin: 0;
+}
+
+.quote-print-header p {
+  margin: 5px 0 0;
+}
+
+.quote-print-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.quote-print-info div {
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 11px;
+}
+
+.quote-print-info span {
+  display: block;
+  font-size: 12px;
+  opacity: 0.65;
+  margin-bottom: 4px;
+}
+
+.quote-print-summary {
+  width: min(360px, 100%);
+  margin-left: auto;
+  margin-top: 20px;
+}
+
+.quote-print-notes {
+  margin-top: 25px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 15px;
+}
+
+@media (max-width: 1000px) {
+  .quotes-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .quotes-page {
+    padding: 14px;
+  }
+
+  .quotes-header,
+  .quotes-list-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .quote-form-grid,
+  .quote-print-info {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-product-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-history-search {
+    width: auto;
+  }
+
+  .quote-cart-controls {
+    align-items: flex-end;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .print-quote,
+  .print-quote * {
+    visibility: visible !important;
+  }
+
+  .print-quote {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+
+.quote-management-panel {
+  padding: 16px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.quote-status-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.quote-status-controls > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quote-status-controls button {
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 8px;
+  padding: 8px 11px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.quote-status-controls button.active {
+  background: #111827;
+  color: white;
+  border-color: #111827;
+}
+
+.quote-status-controls button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.quote-convert-box {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.quote-convert-box > div:first-child span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.quote-convert-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 12px;
+}
+
+.quote-convert-fields label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 5px;
+  opacity: 0.75;
+}
+
+.quote-convert-fields select,
+.quote-convert-fields input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: white;
+}
+
+.convert-quote-btn {
+  border: none;
+  border-radius: 9px;
+  padding: 10px 14px;
+  background: #111827;
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.convert-quote-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.quote-converted-message {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #eef2ff;
+  font-weight: 600;
+}
+
+@media (max-width: 700px) {
+  .quote-status-controls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .quote-convert-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Quote conversion payment modes */
+.quote-convert-payment-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quote-convert-payment-types button {
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 8px;
+  padding: 8px 11px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.quote-convert-payment-types button.active {
+  background: #111827;
+  color: white;
+  border-color: #111827;
+}
+
+.quote-convert-status {
+  min-width: 135px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: white;
+  box-sizing: border-box;
+}
+
+.quote-convert-status strong {
+  display: block;
+  font-size: 13px;
+}
+
+.quote-convert-status span {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.quote-credit-warning {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .quote-convert-payment-types {
+    flex-direction: column;
+  }
+
+  .quote-convert-payment-types button {
+    width: 100%;
+  }
+}

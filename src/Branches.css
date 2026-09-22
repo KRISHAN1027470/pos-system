@@ -1,0 +1,307 @@
+.branches-page {
+  padding: 24px;
+}
+
+.branches-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.branches-header h2 {
+  margin: 0;
+}
+
+.branches-header p {
+  margin: 6px 0 0;
+  opacity: 0.7;
+}
+
+.branch-primary-btn,
+.branch-secondary-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.branch-primary-btn {
+  background: #111827;
+  color: white;
+}
+
+.branch-secondary-btn {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.branch-primary-btn:disabled,
+.branch-secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.branch-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.branch-stat-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.branch-stat-card span {
+  display: block;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.branch-stat-card strong {
+  display: block;
+  margin-top: 7px;
+  font-size: 25px;
+}
+
+.branches-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.branches-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.branch-search {
+  width: min(420px, 100%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 9px 11px;
+}
+
+.branch-search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+}
+
+.branches-toolbar > span {
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+.branches-table-wrapper {
+  overflow-x: auto;
+}
+
+.branches-table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.branches-table-wrapper th,
+.branches-table-wrapper td {
+  text-align: left;
+  padding: 13px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.branches-table-wrapper th {
+  font-size: 12px;
+  opacity: 0.7;
+  background: #fafafa;
+}
+
+.branch-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.branch-name-cell span,
+.branch-contact small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.branch-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.branch-status {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.branch-status.active {
+  background: #ecfdf5;
+}
+
+.branch-status.inactive {
+  background: #f3f4f6;
+  opacity: 0.75;
+}
+
+.branch-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.branch-actions button,
+.branch-close-btn {
+  border: none;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.branch-actions button.danger {
+  background: #fef2f2;
+}
+
+.branch-empty-row {
+  text-align: center !important;
+  padding: 35px !important;
+  opacity: 0.65;
+}
+
+.branch-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.branch-modal {
+  width: min(760px, 96vw);
+  max-height: 92vh;
+  overflow: auto;
+  background: white;
+  border-radius: 16px;
+}
+
+.branch-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.branch-modal-header h3 {
+  margin: 0;
+}
+
+.branch-modal-header p {
+  margin: 5px 0 0;
+  opacity: 0.65;
+  font-size: 13px;
+}
+
+.branch-modal form {
+  padding: 20px;
+}
+
+.branch-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.branch-form-grid label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.branch-form-grid input,
+.branch-form-grid select,
+.branch-form-grid textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  padding: 10px 11px;
+  background: white;
+}
+
+.branch-address-field {
+  grid-column: 1 / -1;
+}
+
+.branch-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+@media (max-width: 760px) {
+  .branches-page {
+    padding: 14px;
+  }
+
+  .branches-header,
+  .branches-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .branch-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .branch-search {
+    width: auto;
+  }
+
+  .branch-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .branch-address-field {
+    grid-column: auto;
+  }
+}
