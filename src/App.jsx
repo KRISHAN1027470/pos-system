@@ -79,7 +79,7 @@ function PrivateApp() {
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [activeMenu, setActiveMenu] = useState("Dashboard");
-  const [companyName, setCompanyName] = useState("LE POS");
+  const [companyName, setCompanyName] = useState("Point of Sales");
   const [businessSetup, setBusinessSetup] = useState({
     company_name: "",
     address: "",
@@ -284,7 +284,7 @@ function PrivateApp() {
       if (data?.company_name?.trim()) {
         setCompanyName(data.company_name.trim());
       } else {
-        setCompanyName("LE POS");
+        setCompanyName("Point of Sales");
       }
     }
 
@@ -631,7 +631,7 @@ function PrivateApp() {
       >
         <div style={{ textAlign: "center" }}>
           <ShieldCheck size={42} />
-          <h2>Loading LE POS...</h2>
+          <h2>Loading Point of Sales...</h2>
           <p>Checking your account and permissions.</p>
         </div>
       </div>
@@ -780,7 +780,7 @@ function PrivateApp() {
         <div style={{ textAlign: "center" }}>
           <ShieldCheck size={42} />
           <h2>Checking subscription...</h2>
-          <p>Verifying your LE POS access.</p>
+          <p>Verifying your Point of Sales access.</p>
         </div>
       </div>
     );
@@ -1124,7 +1124,7 @@ function PrivateApp() {
         </nav>
 
         <div style={{ marginTop: "auto", padding: "14px 12px", fontSize: "12px", lineHeight: 1.5, opacity: 0.9 }}>
-          <div style={{ fontWeight: 700 }}>Need help with LE POS?</div>
+          <div style={{ fontWeight: 700 }}>Need help with Point of Sales?</div>
           <a href="tel:+94769696491" style={{ color: "inherit", textDecoration: "none", fontWeight: 800 }}>
             Support: 076 969 6491
           </a>
