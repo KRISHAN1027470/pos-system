@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CreditCard, CheckCircle2, Clock3, XCircle } from "lucide-react";
+import { CreditCard, CheckCircle2, Clock3, XCircle, Building2, Copy, Check } from "lucide-react";
 import { supabase } from "./supabase";
 
 const money = (value) =>
@@ -20,6 +20,17 @@ export default function Subscription({ subscription, onActivated }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [accountCopied, setAccountCopied] = useState(false);
+
+  async function copyAccountNumber() {
+    try {
+      await navigator.clipboard.writeText("8020223683");
+      setAccountCopied(true);
+      setTimeout(() => setAccountCopied(false), 1800);
+    } catch {
+      alert("Account Number: 802 022 3683");
+    }
+  }
 
   async function loadPayments() {
     setLoading(true);
@@ -160,6 +171,101 @@ export default function Subscription({ subscription, onActivated }) {
             <span style={{ fontSize: 25, fontWeight: 800 }}>Rs. 64,800</span>
             <span>1 year access</span>
           </button>
+        </div>
+
+        <div
+          style={{
+            marginBottom: 20,
+            padding: 20,
+            border: "1px solid #d0d5dd",
+            borderRadius: 14,
+            background: "#f8fafc",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 16,
+            }}
+          >
+            <Building2 size={22} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 17 }}>
+                Bank Transfer Details
+              </div>
+              <div style={{ color: "#667085", fontSize: 13, marginTop: 2 }}>
+                Transfer your subscription payment to the account below.
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 12,
+            }}
+          >
+            <div style={bankDetailStyle}>
+              <span style={bankLabelStyle}>Account Name</span>
+              <strong>G. KRISHAN</strong>
+            </div>
+
+            <div style={bankDetailStyle}>
+              <span style={bankLabelStyle}>Account Number</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <strong style={{ fontSize: 17 }}>802 022 3683</strong>
+                <button
+                  type="button"
+                  onClick={copyAccountNumber}
+                  title="Copy account number"
+                  style={{
+                    border: "1px solid #d0d5dd",
+                    background: "#fff",
+                    borderRadius: 8,
+                    padding: "6px 9px",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    fontWeight: 700,
+                  }}
+                >
+                  {accountCopied ? <Check size={15} /> : <Copy size={15} />}
+                  {accountCopied ? "Copied" : "Copy"}
+                </button>
+              </div>
+            </div>
+
+            <div style={bankDetailStyle}>
+              <span style={bankLabelStyle}>Bank</span>
+              <strong>COMMERCIAL BANK</strong>
+            </div>
+
+            <div style={bankDetailStyle}>
+              <span style={bankLabelStyle}>Branch</span>
+              <strong>KOTAHENA BRANCH</strong>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 14,
+              padding: "11px 13px",
+              background: "#fff",
+              border: "1px solid #eaecf0",
+              borderRadius: 9,
+              color: "#475467",
+              fontSize: 13,
+              lineHeight: 1.5,
+            }}
+          >
+            Please transfer the selected subscription amount to the above
+            account, then enter your bank reference / transaction ID below and
+            submit the payment for approval.
+          </div>
         </div>
 
         <label style={labelStyle}>Payment Method</label>
@@ -325,4 +431,21 @@ const tdStyle = {
   borderBottom: "1px solid #f2f4f7",
   verticalAlign: "middle",
   whiteSpace: "nowrap",
+};
+
+
+const bankDetailStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 5,
+  padding: "12px 14px",
+  background: "#fff",
+  border: "1px solid #eaecf0",
+  borderRadius: 10,
+};
+
+const bankLabelStyle = {
+  color: "#667085",
+  fontSize: 12,
+  fontWeight: 600,
 };
