@@ -16,9 +16,9 @@ export default defineConfig({
       ],
 
       manifest: {
-        name: "LE POS",
-        short_name: "LE POS",
-        description: "LE POS Point of Sale System",
+        name: "Point of Sales",
+        short_name: "Point of Sales",
+        description: "Point of Sales Point of Sale System",
 
         start_url: "/",
         scope: "/",
