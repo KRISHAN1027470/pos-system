@@ -68,6 +68,31 @@ const MENU_ITEMS = [
   { name: "Settings", icon: SettingsIcon, roles: ["ADMIN", "CASHIER"] },
 ];
 
+
+const BRANCH_SELECTOR_STYLES = `
+@keyframes branchGateEnter{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes branchOrb{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-20px,0)}}
+@keyframes branchShine{0%{transform:translateX(-180%) rotate(18deg)}100%{transform:translateX(500%) rotate(18deg)}}
+.branch-gate{min-height:100vh;position:relative;overflow:hidden;padding:44px 20px;display:grid;place-items:center;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 12% 15%,rgba(99,102,241,.25),transparent 28%),radial-gradient(circle at 90% 85%,rgba(14,165,233,.18),transparent 30%),linear-gradient(135deg,#07111f,#0b1730 52%,#111b38)}
+.branch-gate:before{content:"";position:absolute;inset:0;opacity:.14;background-image:linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:42px 42px;pointer-events:none}
+.branch-orb{position:absolute;border-radius:50%;animation:branchOrb 8s ease-in-out infinite}.branch-orb.a{width:280px;height:280px;left:-90px;top:10%;background:rgba(99,102,241,.16)}.branch-orb.b{width:340px;height:340px;right:-120px;bottom:-80px;background:rgba(14,165,233,.12);animation-delay:-3s}
+.branch-shell{position:relative;z-index:1;width:min(100%,1040px);display:grid;grid-template-columns:.88fr 1.12fr;border:1px solid rgba(255,255,255,.15);border-radius:30px;overflow:hidden;background:#fff;box-shadow:0 35px 90px rgba(0,0,0,.38);animation:branchGateEnter .6s cubic-bezier(.2,.8,.2,1)}
+.branch-brand{min-height:620px;padding:46px 40px;color:#fff;display:flex;flex-direction:column;background:linear-gradient(155deg,#111c38,#172554 58%,#312e81);position:relative;overflow:hidden}.branch-brand:after{content:"";position:absolute;width:330px;height:330px;border-radius:50%;right:-200px;top:90px;background:rgba(129,140,248,.18)}
+.branch-logo{width:58px;height:58px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 16px 35px rgba(99,102,241,.35)}
+.branch-kicker{margin-top:28px;color:#a5b4fc;font-size:12px;font-weight:800;letter-spacing:.17em;text-transform:uppercase}.branch-brand h2{font-size:38px;line-height:1.08;margin:12px 0 16px;letter-spacing:-.04em}.branch-brand p{color:#cbd5e1;line-height:1.7;margin:0;font-size:15px}
+.branch-features{display:grid;gap:12px;margin-top:30px}.branch-features div{display:flex;align-items:center;gap:10px;color:#e2e8f0;font-size:14px;font-weight:650}.branch-features span{width:29px;height:29px;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,.09)}
+.branch-support{margin-top:auto;color:#94a3b8;font-size:12px;line-height:1.6}.branch-support a{color:white;text-decoration:none;font-weight:800}
+.branch-main{padding:42px 40px;background:linear-gradient(180deg,#fff,#f8fafc)}.branch-mobile-logo{display:none}.branch-main h1{margin:0;color:#0f172a;font-size:31px;letter-spacing:-.035em}.branch-main-desc{margin:9px 0 0;color:#64748b;line-height:1.6}.branch-count{display:inline-flex;margin-top:15px;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#4338ca;font-size:12px;font-weight:800}
+.branch-gate-error{margin-top:16px;padding:11px 13px;border:1px solid #fecaca;border-radius:11px;background:#fff1f2;color:#b42318;font-size:13px}.branch-list{display:grid;gap:12px;margin-top:22px;max-height:330px;overflow:auto;padding:2px 5px 2px 2px}
+.branch-choice{width:100%;border:1px solid #e2e8f0;border-radius:17px;padding:16px 17px;background:#fff;display:flex;align-items:center;gap:14px;text-align:left;cursor:pointer;box-shadow:0 7px 20px rgba(15,23,42,.045);transition:.22s ease}.branch-choice:hover{transform:translateY(-3px);border-color:#a5b4fc;box-shadow:0 17px 32px rgba(79,70,229,.13)}.branch-choice:active{transform:scale(.99)}
+.branch-choice-icon{width:45px;height:45px;flex:0 0 auto;border-radius:13px;display:grid;place-items:center;color:#4f46e5;background:#eef2ff;transition:.22s ease}.branch-choice:hover .branch-choice-icon{background:#4f46e5;color:#fff}.branch-choice-copy{min-width:0;flex:1}.branch-choice-copy strong{display:block;color:#0f172a;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.branch-choice-copy small{display:flex;align-items:center;gap:6px;margin-top:5px;color:#64748b;font-size:12px}.branch-arrow{font-size:26px;color:#94a3b8;transition:.22s ease}.branch-choice:hover .branch-arrow{transform:translateX(3px);color:#4f46e5}
+.branch-create{width:100%;margin-top:18px;border:0;border-radius:14px;padding:15px;color:#fff;font-weight:800;background:linear-gradient(100deg,#111827,#273449);display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 12px 26px rgba(15,23,42,.16);transition:.2s ease}.branch-create:after{content:"";position:absolute;top:-60%;left:-30%;width:65px;height:220%;background:rgba(255,255,255,.16);animation:branchShine 5s ease-in-out infinite}.branch-create:hover{transform:translateY(-2px);box-shadow:0 17px 32px rgba(15,23,42,.22)}
+.branch-footer{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:18px;border-top:1px solid #e2e8f0}.branch-secure{display:flex;align-items:center;gap:6px;color:#64748b;font-size:12px}.branch-signout{border:0;background:transparent;color:#475569;font-weight:750;cursor:pointer;padding:8px 9px;border-radius:9px}.branch-signout:hover{background:#f1f5f9;color:#0f172a}
+.branch-choice:focus-visible,.branch-create:focus-visible,.branch-signout:focus-visible{outline:3px solid rgba(99,102,241,.32);outline-offset:3px}
+@media(max-width:800px){.branch-gate{padding:18px 13px;place-items:start center}.branch-shell{grid-template-columns:1fr;max-width:570px;border-radius:23px}.branch-brand{display:none}.branch-main{padding:28px 22px;min-height:calc(100vh - 36px)}.branch-mobile-logo{display:flex;align-items:center;gap:10px;margin-bottom:27px;font-weight:900;color:#0f172a}.branch-mobile-logo span{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#6366f1,#8b5cf6)}.branch-main h1{font-size:27px}.branch-list{max-height:none}}
+@media(prefers-reduced-motion:reduce){.branch-shell,.branch-orb,.branch-create:after{animation:none!important}.branch-choice,.branch-create,.branch-choice-icon,.branch-arrow{transition:none!important}}
+`;
+
 function PrivateApp() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -79,6 +104,7 @@ function PrivateApp() {
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [activeMenu, setActiveMenu] = useState("Dashboard");
+  const [invoiceToOpen, setInvoiceToOpen] = useState("");
   const [companyName, setCompanyName] = useState("Point of Sales");
   const [businessSetup, setBusinessSetup] = useState({
     company_name: "",
@@ -939,60 +965,66 @@ function PrivateApp() {
 
   if (!activeBranch) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f6f8fb", padding: "40px 20px", fontFamily: "Inter, system-ui, sans-serif" }}>
-        <div style={{ maxWidth: "760px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "28px" }}>
-            <Building2 size={48} />
-            <h1 style={{ marginBottom: "8px" }}>Select Branch</h1>
-            <p style={{ color: "#667085" }}>Enter the selected branch password to open the POS system.</p>
-          </div>
+      <div className="branch-gate">
+        <style>{BRANCH_SELECTOR_STYLES}</style>
+        <div className="branch-orb a" />
+        <div className="branch-orb b" />
 
-          {branchError && !pendingBranch && (
-            <div style={{ background: "#fee2e2", padding: "12px 14px", borderRadius: "10px", marginBottom: "16px" }}>{branchError}</div>
-          )}
+        <section className="branch-shell">
+          <aside className="branch-brand">
+            <div className="branch-logo"><ShoppingCart size={28} /></div>
+            <div className="branch-kicker">Point of Sales • Secure Workspace</div>
+            <h2>Select your workspace.</h2>
+            <p>Choose the branch you want to operate. Each location stays protected so sales, stock and daily operations remain secure.</p>
 
-          <div style={{ display: "grid", gap: "14px" }}>
-            {branches.map((branch) => (
-              <button
-                key={branch.id}
-                onClick={() => requestBranchUnlock(branch)}
-                style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "16px", padding: "20px", cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 8px 24px rgba(0,0,0,.05)" }}
-              >
-                <div>
-                  <strong style={{ display: "block", fontSize: "17px" }}>{branch.branch_code} - {branch.branch_name}</strong>
-                  <span style={{ color: "#667085" }}>{branch.branch_password_hash ? "Password protected" : "Password not configured"}</span>
-                </div>
-                <KeyRound size={22} />
-              </button>
-            ))}
-          </div>
+            <div className="branch-features">
+              <div><span><ShieldCheck size={15} /></span> Secure branch access</div>
+              <div><span><Building2 size={15} /></span> Multi-branch operations</div>
+              <div><span><KeyRound size={15} /></span> Password protected sessions</div>
+            </div>
 
-          <button
-            type="button"
-            onClick={openCreateBranch}
-            style={{
-              width: "100%",
-              marginTop: "18px",
-              padding: "14px 18px",
-              border: 0,
-              borderRadius: "12px",
-              background: "#111827",
-              color: "#fff",
-              cursor: "pointer",
-              fontWeight: 700,
-              fontSize: "16px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-            }}
-          >
-            <Plus size={19} />
-            Create New Branch
-          </button>
+            <div className="branch-support">
+              Need help with Point of Sales?<br />
+              <a href="tel:+94769696491">Support: 076 969 6491</a>
+            </div>
+          </aside>
 
-          <button onClick={handleLogout} style={{ marginTop: "24px", border: 0, background: "transparent", cursor: "pointer", textDecoration: "underline" }}>Sign out</button>
-        </div>
+          <main className="branch-main">
+            <div className="branch-mobile-logo">
+              <span><ShoppingCart size={21} /></span> Point of Sales
+            </div>
+
+            <h1>Select Branch</h1>
+            <p className="branch-main-desc">Select a business location to continue. Enter that branch&apos;s password to open the POS system.</p>
+            <div className="branch-count">{branches.length} active {branches.length === 1 ? "branch" : "branches"}</div>
+
+            {branchError && !pendingBranch && (
+              <div className="branch-gate-error">{branchError}</div>
+            )}
+
+            <div className="branch-list">
+              {branches.map((branch) => (
+                <button type="button" className="branch-choice" key={branch.id} onClick={() => requestBranchUnlock(branch)}>
+                  <span className="branch-choice-icon"><Building2 size={21} /></span>
+                  <span className="branch-choice-copy">
+                    <strong>{branch.branch_code} - {branch.branch_name}</strong>
+                    <small><KeyRound size={13} />{branch.branch_password_hash ? "Password protected" : "Password not configured"}</small>
+                  </span>
+                  <span className="branch-arrow">›</span>
+                </button>
+              ))}
+            </div>
+
+            <button type="button" className="branch-create" onClick={openCreateBranch}>
+              <Plus size={18} /> Create New Branch
+            </button>
+
+            <div className="branch-footer">
+              <span className="branch-secure"><ShieldCheck size={15} /> Secure branch access</span>
+              <button type="button" className="branch-signout" onClick={handleLogout}>Sign out</button>
+            </div>
+          </main>
+        </section>
 
         {showCreateBranch && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.48)", display: "grid", placeItems: "center", padding: "20px", zIndex: 9999, overflowY: "auto" }}>
@@ -1055,6 +1087,7 @@ function PrivateApp() {
             </form>
           </div>
         )}
+
 
         {pendingBranch && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.48)", display: "grid", placeItems: "center", padding: "20px", zIndex: 9999 }}>
@@ -1293,6 +1326,8 @@ function PrivateApp() {
               branchId={activeBranch.id}
               branches={branches}
               requestBranchSwitch={requestBranchSwitch}
+              openInvoiceNumber={invoiceToOpen}
+              onInvoiceOpened={() => setInvoiceToOpen("")}
             />
           )}
 
@@ -1312,6 +1347,10 @@ function PrivateApp() {
               branchId={activeBranch.id}
               branches={branches}
               requestBranchSwitch={requestBranchSwitch}
+              onInvoiceCreated={(invoiceNumber) => {
+                setInvoiceToOpen(invoiceNumber || "");
+                setActiveMenu("Invoices");
+              }}
             />
           )}
 
