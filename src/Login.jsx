@@ -6,6 +6,13 @@ import {
   Eye,
   EyeOff,
   UserRound,
+  BarChart3,
+  Boxes,
+  Users,
+  ShieldCheck,
+  Headphones,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "./supabase";
 import "./Login.css";
@@ -173,250 +180,300 @@ export default function Login() {
 
   return (
     <div className="login-page">
-      <div className="login-background-shape login-shape-one" />
-      <div className="login-background-shape login-shape-two" />
+      <div className="login-orb login-orb-one" />
+      <div className="login-orb login-orb-two" />
+      <div className="login-orb login-orb-three" />
 
-      <div className="login-card">
-        <div className="login-brand">
-          <div className="login-logo">
-            <ShoppingCart size={26} />
+      <main className="login-shell">
+        <section className="login-showcase">
+          <div className="showcase-grid" />
+
+          <div className="showcase-top">
+            <div className="showcase-brand">
+              <div className="showcase-logo">
+                <ShoppingCart size={28} strokeWidth={2.2} />
+              </div>
+              <div>
+                <strong>Point of Sales</strong>
+                <span>Business Management Suite</span>
+              </div>
+            </div>
+
+            <div className="showcase-badge">
+              <span className="live-dot" />
+              Secure cloud POS
+            </div>
           </div>
 
-          <div>
-            <h1>Point Of Sale</h1>
-            <p>Point of Sale Management System</p>
+          <div className="showcase-content">
+            <div className="eyebrow">
+              <Sparkles size={15} />
+              Built for modern businesses
+            </div>
+
+            <h1>
+              Run your business
+              <span> smarter, every day.</span>
+            </h1>
+
+            <p>
+              Sales, inventory, customers, branches and business insights in one
+              secure point-of-sale platform.
+            </p>
+
+            <div className="feature-grid">
+              <div className="feature-card">
+                <div className="feature-icon"><ShoppingCart size={20} /></div>
+                <div>
+                  <strong>Fast Sales</strong>
+                  <span>Simple and efficient checkout</span>
+                </div>
+              </div>
+
+              <div className="feature-card">
+                <div className="feature-icon"><Boxes size={20} /></div>
+                <div>
+                  <strong>Live Inventory</strong>
+                  <span>Stay on top of your stock</span>
+                </div>
+              </div>
+
+              <div className="feature-card">
+                <div className="feature-icon"><Users size={20} /></div>
+                <div>
+                  <strong>Customers</strong>
+                  <span>Keep customer records organized</span>
+                </div>
+              </div>
+
+              <div className="feature-card">
+                <div className="feature-icon"><BarChart3 size={20} /></div>
+                <div>
+                  <strong>Business Reports</strong>
+                  <span>Understand performance quickly</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="security-note">
+              <ShieldCheck size={20} />
+              <div>
+                <strong>Secure business access</strong>
+                <span>Your account is protected by secure authentication.</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "6px",
-            padding: "5px",
-            borderRadius: "12px",
-            background: "#f2f4f7",
-            marginBottom: "22px",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => changeMode("signin")}
-            disabled={loading}
-            style={{
-              border: 0,
-              borderRadius: "9px",
-              padding: "10px 12px",
-              cursor: "pointer",
-              fontWeight: 700,
-              background: mode === "signin" ? "#fff" : "transparent",
-              boxShadow:
-                mode === "signin" ? "0 1px 4px rgba(16,24,40,.10)" : "none",
-              color: mode === "signin" ? "#101828" : "#667085",
-            }}
-          >
-            Sign In
-          </button>
+          <div className="showcase-footer">
+            <Headphones size={17} />
+            <span>Need help?</span>
+            <a href="tel:+94769696491">076 969 6491</a>
+          </div>
+        </section>
 
-          <button
-            type="button"
-            onClick={() => changeMode("signup")}
-            disabled={loading}
-            style={{
-              border: 0,
-              borderRadius: "9px",
-              padding: "10px 12px",
-              cursor: "pointer",
-              fontWeight: 700,
-              background: mode === "signup" ? "#fff" : "transparent",
-              boxShadow:
-                mode === "signup" ? "0 1px 4px rgba(16,24,40,.10)" : "none",
-              color: mode === "signup" ? "#101828" : "#667085",
-            }}
-          >
-            Sign Up
-          </button>
-        </div>
-
-        <div className="login-heading">
-          <h2>{mode === "signin" ? "Welcome back" : "Create your account"}</h2>
-          <p>
-            {mode === "signin"
-              ? "Sign in to continue to your business dashboard."
-              : "Create your Point Of Sale owner account and set up your business."}
-          </p>
-        </div>
-
-        <form
-          onSubmit={mode === "signin" ? handleSignIn : handleSignUp}
-          className="login-form"
-        >
-          {mode === "signup" && (
-            <label>
-              Full name
-              <div className="login-input-wrap">
-                <UserRound size={18} />
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                  placeholder="Enter your full name"
-                  autoComplete="name"
-                  disabled={loading}
-                  required
-                />
-              </div>
-            </label>
-          )}
-
-          <label>
-            Email address
-            <div className="login-input-wrap">
-              <Mail size={18} />
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="name@example.com"
-                autoComplete="email"
-                disabled={loading}
-                required
-              />
+        <section className="login-panel">
+          <div className="mobile-brand">
+            <div className="mobile-brand-logo">
+              <ShoppingCart size={24} />
             </div>
-          </label>
+            <div>
+              <strong>Point of Sales</strong>
+              <span>Point of Sale Management System</span>
+            </div>
+          </div>
 
-          <label>
-            Password
-            <div className="login-input-wrap">
-              <LockKeyhole size={18} />
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder={
-                  mode === "signup"
-                    ? "Minimum 6 characters"
-                    : "Enter your password"
-                }
-                autoComplete={
-                  mode === "signup" ? "new-password" : "current-password"
-                }
-                disabled={loading}
-                required
-                minLength={mode === "signup" ? 6 : undefined}
-              />
+          <div className="login-card">
+            <div className="login-card-head">
+              <div className="login-mini-badge">
+                <ShieldCheck size={15} />
+                Secure access
+              </div>
+              <h2>{mode === "signin" ? "Welcome back" : "Create your account"}</h2>
+              <p>
+                {mode === "signin"
+                  ? "Sign in to access your business workspace."
+                  : "Create your owner account and start setting up your business."}
+              </p>
+            </div>
 
+            <div className="login-tabs" role="tablist" aria-label="Authentication">
               <button
                 type="button"
-                className="login-password-toggle"
-                onClick={() => setShowPassword((current) => !current)}
-                tabIndex={-1}
-                title={showPassword ? "Hide password" : "Show password"}
+                className={mode === "signin" ? "active" : ""}
+                onClick={() => changeMode("signin")}
+                disabled={loading}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                Sign In
               </button>
-            </div>
-          </label>
-
-          {mode === "signin" && (
-            <div style={{ textAlign: "right", marginTop: "-8px" }}>
               <button
                 type="button"
-                onClick={handleForgotPassword}
+                className={mode === "signup" ? "active" : ""}
+                onClick={() => changeMode("signup")}
                 disabled={loading}
-                style={{
-                  border: 0,
-                  background: "transparent",
-                  padding: 0,
-                  color: "#2563eb",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: 600,
-                  fontSize: "14px",
-                }}
               >
-                Forgot Password?
+                Sign Up
               </button>
             </div>
-          )}
 
-          {mode === "signup" && (
-            <label>
-              Confirm password
-              <div className="login-input-wrap">
-                <LockKeyhole size={18} />
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder="Re-enter your password"
-                  autoComplete="new-password"
-                  disabled={loading}
-                  required
-                  minLength={6}
-                />
-
-                <button
-                  type="button"
-                  className="login-password-toggle"
-                  onClick={() =>
-                    setShowConfirmPassword((current) => !current)
-                  }
-                  tabIndex={-1}
-                  title={
-                    showConfirmPassword ? "Hide password" : "Show password"
-                  }
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff size={18} />
-                  ) : (
-                    <Eye size={18} />
-                  )}
-                </button>
-              </div>
-            </label>
-          )}
-
-          {errorMessage && (
-            <div className="login-error">{errorMessage}</div>
-          )}
-
-          {successMessage && (
-            <div
-              style={{
-                padding: "11px 12px",
-                borderRadius: "9px",
-                background: "#ecfdf3",
-                border: "1px solid #abefc6",
-                color: "#067647",
-                fontSize: "14px",
-                lineHeight: 1.45,
-              }}
+            <form
+              onSubmit={mode === "signin" ? handleSignIn : handleSignUp}
+              className="login-form"
             >
-              {successMessage}
+              {mode === "signup" && (
+                <label>
+                  <span className="field-label">Full name</span>
+                  <div className="login-input-wrap">
+                    <UserRound size={18} />
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(event) => setFullName(event.target.value)}
+                      placeholder="Enter your full name"
+                      autoComplete="name"
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+                </label>
+              )}
+
+              <label>
+                <span className="field-label">Email address</span>
+                <div className="login-input-wrap">
+                  <Mail size={18} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="name@example.com"
+                    autoComplete="email"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+              </label>
+
+              <label>
+                <span className="field-label">Password</span>
+                <div className="login-input-wrap">
+                  <LockKeyhole size={18} />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder={
+                      mode === "signup"
+                        ? "Minimum 6 characters"
+                        : "Enter your password"
+                    }
+                    autoComplete={
+                      mode === "signup" ? "new-password" : "current-password"
+                    }
+                    disabled={loading}
+                    required
+                    minLength={mode === "signup" ? 6 : undefined}
+                  />
+                  <button
+                    type="button"
+                    className="login-password-toggle"
+                    onClick={() => setShowPassword((current) => !current)}
+                    tabIndex={-1}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </label>
+
+              {mode === "signin" && (
+                <div className="forgot-row">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={loading}
+                    className="forgot-button"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+
+              {mode === "signup" && (
+                <label>
+                  <span className="field-label">Confirm password</span>
+                  <div className="login-input-wrap">
+                    <LockKeyhole size={18} />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      placeholder="Re-enter your password"
+                      autoComplete="new-password"
+                      disabled={loading}
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      className="login-password-toggle"
+                      onClick={() =>
+                        setShowConfirmPassword((current) => !current)
+                      }
+                      tabIndex={-1}
+                      title={
+                        showConfirmPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </button>
+                  </div>
+                </label>
+              )}
+
+              {errorMessage && (
+                <div className="login-error">{errorMessage}</div>
+              )}
+
+              {successMessage && (
+                <div className="login-success">{successMessage}</div>
+              )}
+
+              <button
+                type="submit"
+                className="login-submit"
+                disabled={loading}
+              >
+                <span>
+                  {loading
+                    ? mode === "signin"
+                      ? "Signing in..."
+                      : "Creating account..."
+                    : mode === "signin"
+                    ? "Sign In"
+                    : "Create Account"}
+                </span>
+                {!loading && <ArrowRight size={18} />}
+              </button>
+            </form>
+
+            <div className="login-footer">
+              <ShieldCheck size={14} />
+              {mode === "signin"
+                ? "Authorized users only · Secure access"
+                : "Create a new business owner account"}
             </div>
-          )}
 
-          <button
-            type="submit"
-            className="login-submit"
-            disabled={loading}
-          >
-            {loading
-              ? mode === "signin"
-                ? "Signing in..."
-                : "Creating account..."
-              : mode === "signin"
-              ? "Sign In"
-              : "Create Account"}
-          </button>
-        </form>
-
-        <div className="login-footer">
-          {mode === "signin"
-            ? "Authorized users only"
-            : "Create a new business owner account"}
-        </div>
-      </div>
+            <div className="mobile-support">
+              <span>Need help with Point of Sales?</span>
+              <a href="tel:+94769696491">076 969 6491</a>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

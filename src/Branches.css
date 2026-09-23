@@ -305,3 +305,81 @@
     grid-column: auto;
   }
 }
+
+/* =========================================================
+   LE POS — Branches Premium UI Layer
+   Visual enhancement only; branch/password/Supabase logic unchanged.
+   ========================================================= */
+@keyframes branchEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes branchModalIn{from{opacity:0;transform:translateY(18px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes branchSweep{from{transform:translateX(-160%) skewX(-18deg)}to{transform:translateX(380%) skewX(-18deg)}}
+
+.branches-page{position:relative;isolation:isolate;padding:2px;display:flex;flex-direction:column;gap:18px}
+.branches-page:before,.branches-page:after{content:"";position:fixed;z-index:-1;pointer-events:none;border-radius:999px;filter:blur(20px)}
+.branches-page:before{width:310px;height:310px;right:4%;top:115px;background:rgba(99,102,241,.055)}
+.branches-page:after{width:250px;height:250px;left:18%;bottom:4%;background:rgba(14,165,233,.045)}
+
+.branches-header{position:relative;overflow:hidden;margin-bottom:0;padding:22px 24px;border:1px solid #e5eaf2;border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,250,255,.96));box-shadow:0 12px 38px rgba(15,23,42,.06);animation:branchEnter .42s ease both}
+.branches-header:after{content:"";position:absolute;width:190px;height:190px;right:-65px;top:-112px;border-radius:50%;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(14,165,233,.03));pointer-events:none}
+.branches-header h2{position:relative;z-index:1;font-size:28px;letter-spacing:-.04em;color:#0f172a}
+.branches-header p{position:relative;z-index:1;color:#64748b;opacity:1;line-height:1.5}
+.branch-primary-btn{position:relative;z-index:1;overflow:hidden;min-height:43px;border:0;border-radius:11px;padding:0 16px;background:linear-gradient(135deg,#111827,#27356b 58%,#4f46e5);color:#fff;box-shadow:0 9px 22px rgba(30,41,59,.18);font-weight:800;transition:.2s ease}
+.branch-primary-btn:after{content:"";position:absolute;width:60px;height:180%;top:-40%;left:-95px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);pointer-events:none}
+.branch-primary-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 28px rgba(79,70,229,.22)}
+.branch-primary-btn:hover:after{animation:branchSweep .75s ease}
+.branch-secondary-btn{min-height:43px;border:1px solid #dbe3ef;border-radius:10px;padding:0 16px;background:#fff;color:#334155;font-weight:750;transition:.18s ease}
+.branch-secondary-btn:hover:not(:disabled){transform:translateY(-1px);border-color:#a5b4fc;background:#f8faff;color:#4338ca;box-shadow:0 6px 14px rgba(79,70,229,.08)}
+
+.branch-stats{gap:14px;margin-bottom:0}
+.branch-stat-card{position:relative;overflow:hidden;min-height:105px;border-color:#e5eaf2;border-radius:18px;background:linear-gradient(145deg,#fff,#fbfcff);box-shadow:0 9px 28px rgba(15,23,42,.045);animation:branchEnter .46s ease both;transition:.22s ease}
+.branch-stat-card:nth-child(2){animation-delay:.055s}.branch-stat-card:nth-child(3){animation-delay:.11s}
+.branch-stat-card:before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 5px 5px 0;background:linear-gradient(180deg,#6366f1,#8b5cf6)}
+.branch-stat-card:nth-child(2):before{background:linear-gradient(180deg,#10b981,#059669)}
+.branch-stat-card:nth-child(3):before{background:linear-gradient(180deg,#94a3b8,#475569)}
+.branch-stat-card:hover{transform:translateY(-5px);border-color:#c7d2fe;box-shadow:0 18px 38px rgba(79,70,229,.10)}
+.branch-stat-card span{font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.075em;color:#8491a6;opacity:1}
+.branch-stat-card strong{font-size:27px;color:#0f172a;letter-spacing:-.035em}
+
+.branches-card{border-color:#e5eaf2;border-radius:18px;background:rgba(255,255,255,.97);box-shadow:0 11px 32px rgba(15,23,42,.05);animation:branchEnter .52s ease .12s both;transition:.22s ease}
+.branches-card:hover{border-color:#dbe2ef;box-shadow:0 16px 40px rgba(15,23,42,.07)}
+.branches-toolbar{padding:17px 18px;border-bottom-color:#edf0f5;background:linear-gradient(180deg,#fff,#fbfcff)}
+.branch-search{min-height:43px;padding:0 13px;border-color:#dbe3ef;border-radius:11px;background:#fbfcff;color:#64748b;transition:.2s ease}
+.branch-search:focus-within{background:#fff;border-color:#818cf8;box-shadow:0 0 0 4px rgba(99,102,241,.10),0 8px 22px rgba(79,70,229,.06)}
+.branch-search input{color:#172033;font:inherit}
+.branches-toolbar>span{padding:6px 10px;border-radius:999px;background:#f1f5f9;color:#64748b;font-weight:750;opacity:1}
+
+.branches-table-wrapper table{min-width:1080px}
+.branches-table-wrapper th{background:#f7f9fd;color:#69768a;text-transform:uppercase;font-size:9px;letter-spacing:.085em;font-weight:900;opacity:1}
+.branches-table-wrapper td{color:#475569;font-size:13px;border-bottom-color:#edf1f5}
+.branches-table-wrapper tbody tr{transition:background .18s ease}
+.branches-table-wrapper tbody tr:hover{background:linear-gradient(90deg,#f8faff,#fbfcff)}
+.branches-table-wrapper tbody td:first-child{border-left:2px solid transparent;transition:.18s ease}
+.branches-table-wrapper tbody tr:hover td:first-child{border-left-color:#6366f1}
+.branch-name-cell span,.branch-contact small{color:#8491a6;opacity:1}
+.branch-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(145deg,#eef2ff,#f5f3ff);color:#5b61ed;box-shadow:inset 0 0 0 1px #e0e7ff;transition:.2s ease}
+.branches-table-wrapper tbody tr:hover .branch-icon{transform:translateY(-2px) rotate(2deg);color:#fff;background:linear-gradient(135deg,#6366f1,#7c3aed);box-shadow:0 8px 18px rgba(99,102,241,.20)}
+.branch-status{padding:6px 10px;letter-spacing:.025em;box-shadow:inset 0 0 0 1px rgba(15,23,42,.03)}
+.branch-status.active{background:#ecfdf3;color:#027a48}
+.branch-status.inactive{background:#f1f5f9;color:#64748b;opacity:1}
+.branch-actions button,.branch-close-btn{width:36px;height:36px;display:grid;place-items:center;border:1px solid #e2e8f0;border-radius:9px;padding:0;background:#fff;color:#64748b;transition:.18s ease}
+.branch-actions button:hover,.branch-close-btn:hover{transform:translateY(-2px);background:#eef2ff;color:#4f46e5;border-color:#c7d2fe;box-shadow:0 6px 14px rgba(79,70,229,.10)}
+.branch-actions button.danger{background:#fff;color:#64748b}
+.branch-actions button.danger:hover{background:#fef2f2;color:#dc2626;border-color:#fecaca;box-shadow:0 6px 14px rgba(220,38,38,.08)}
+.branch-empty-row{padding:50px!important;color:#94a3b8;opacity:1}
+
+.branch-modal-overlay{z-index:1300;background:rgba(15,23,42,.60);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);animation:branchEnter .2s ease both}
+.branch-modal{border:1px solid rgba(255,255,255,.72);border-radius:20px;box-shadow:0 30px 85px rgba(15,23,42,.30);animation:branchModalIn .3s cubic-bezier(.2,.75,.25,1) both}
+.branch-modal-header{position:sticky;top:0;z-index:5;align-items:center;padding:20px 22px;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.branch-modal-header h3{color:#0f172a;font-size:20px;letter-spacing:-.025em}
+.branch-modal-header p{color:#64748b;opacity:1}
+.branch-modal form{padding:22px}
+.branch-form-grid{gap:15px}
+.branch-form-grid label{color:#475569;font-size:12px;font-weight:800;opacity:1}
+.branch-form-grid input,.branch-form-grid select,.branch-form-grid textarea{border-color:#dbe3ef;border-radius:10px;color:#172033;font:inherit;outline:0;transition:.2s ease}
+.branch-form-grid input:focus,.branch-form-grid select:focus,.branch-form-grid textarea:focus{border-color:#818cf8;box-shadow:0 0 0 4px rgba(99,102,241,.11)}
+.branch-form-grid textarea{resize:vertical}
+.branch-modal-actions{padding-top:18px;border-top:1px solid #eef2f7}
+
+@media(max-width:760px){.branches-page{padding:0}.branches-header{padding:19px}.branches-header .branch-primary-btn{width:100%}.branches-toolbar>span{align-self:flex-start}.branch-modal form{padding:17px}}
+@media(prefers-reduced-motion:reduce){.branches-header,.branch-stat-card,.branches-card,.branch-modal-overlay,.branch-modal,.branch-primary-btn:hover:after{animation:none!important}.branch-stat-card,.branch-primary-btn,.branch-secondary-btn,.branch-actions button,.branch-close-btn,.branch-icon{transition:none!important}}
+
