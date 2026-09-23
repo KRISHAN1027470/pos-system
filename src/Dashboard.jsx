@@ -225,7 +225,7 @@ export default function Dashboard({ activeBranch, branchId, branches: appBranche
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+        <div className="dashboard-header-actions">
           <select
             value={selectedBranchId}
             onChange={(e) => {
@@ -235,18 +235,7 @@ export default function Dashboard({ activeBranch, branchId, branches: appBranche
               }
             }}
             aria-label="Select dashboard branch"
-            style={{
-              minWidth: "220px",
-              height: "48px",
-              padding: "0 14px",
-              border: "1px solid #dbe3ef",
-              borderRadius: "12px",
-              background: "#fff",
-              fontSize: "15px",
-              fontWeight: 700,
-              color: "#13213a",
-              cursor: "pointer",
-            }}
+            className="dashboard-branch-select"
           >
             {branches
               .filter((branch) => branch.status === "ACTIVE")

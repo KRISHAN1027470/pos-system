@@ -16,3 +16,94 @@ button.accept-grn-btn svg {
   stroke: #000000 !important;
 }
 
+/* =========================================================
+   LE POS — Purchase Management Premium UI Layer
+   Visual enhancement only; purchase/GRN/branch logic unchanged.
+   ========================================================= */
+@keyframes purchaseEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes purchaseModalIn{from{opacity:0;transform:translateY(18px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes purchaseSweep{from{transform:translateX(-160%) skewX(-18deg)}to{transform:translateX(380%) skewX(-18deg)}}
+@keyframes purchaseSpin{to{transform:rotate(360deg)}}
+
+.purchases-page{position:relative;isolation:isolate;gap:17px}
+.purchases-page::before,.purchases-page::after{content:"";position:fixed;z-index:-1;pointer-events:none;border-radius:999px;filter:blur(20px)}
+.purchases-page::before{width:310px;height:310px;right:4%;top:115px;background:rgba(99,102,241,.055)}
+.purchases-page::after{width:260px;height:260px;left:18%;bottom:3%;background:rgba(14,165,233,.045)}
+
+.purchase-head{position:relative;overflow:hidden;padding:22px 24px;border:1px solid #e5eaf2;border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,250,255,.96));box-shadow:0 12px 38px rgba(15,23,42,.06);animation:purchaseEnter .42s ease both}
+.purchase-head::after{content:"";position:absolute;width:190px;height:190px;right:-65px;top:-112px;border-radius:50%;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(14,165,233,.03));pointer-events:none}
+.purchase-head h1{position:relative;z-index:1;font-size:28px;letter-spacing:-.04em;color:#0f172a}
+.purchase-head p{position:relative;z-index:1;color:#64748b;line-height:1.5}
+.purchase-actions{position:relative;z-index:1}
+
+.p-primary,.p-secondary,.complete-btn,.row-actions button,.line-title button{position:relative;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease,color .18s ease}
+.p-primary,.complete-btn,.row-actions .receive{background:linear-gradient(135deg,#111827,#27356b 58%,#4f46e5);box-shadow:0 8px 20px rgba(30,41,59,.16)}
+.p-primary::after,.complete-btn::after{content:"";position:absolute;width:58px;height:180%;top:-40%;left:-90px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);pointer-events:none}
+.p-primary:hover:not(:disabled),.complete-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 13px 27px rgba(79,70,229,.22)}
+.p-primary:hover::after,.complete-btn:hover::after{animation:purchaseSweep .75s ease}
+.p-secondary:hover,.line-title button:hover,.row-actions button:hover{transform:translateY(-1px);border-color:#a5b4fc;background:#f8faff;color:#4338ca;box-shadow:0 6px 15px rgba(79,70,229,.08)}
+
+.purchase-stats{gap:14px}
+.purchase-stats>div{position:relative;overflow:hidden;min-height:104px;border-color:#e5eaf2;border-radius:18px;background:linear-gradient(145deg,#fff,#fbfcff);box-shadow:0 9px 28px rgba(15,23,42,.045);animation:purchaseEnter .46s ease both;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.purchase-stats>div:nth-child(2){animation-delay:.05s}.purchase-stats>div:nth-child(3){animation-delay:.1s}.purchase-stats>div:nth-child(4){animation-delay:.15s}
+.purchase-stats>div::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 5px 5px 0;background:linear-gradient(180deg,#6366f1,#8b5cf6)}
+.purchase-stats>div:nth-child(2)::before{background:linear-gradient(180deg,#10b981,#059669)}
+.purchase-stats>div:nth-child(3)::before{background:linear-gradient(180deg,#0ea5e9,#2563eb)}
+.purchase-stats>div:nth-child(4)::before{background:linear-gradient(180deg,#f59e0b,#ea580c)}
+.purchase-stats svg{width:48px;height:48px;padding:12px;border-radius:15px;color:#5b61ed;background:#eef2ff;transition:.22s ease}
+.purchase-stats>div:nth-child(2) svg{color:#059669;background:#ecfdf5}.purchase-stats>div:nth-child(3) svg{color:#0284c7;background:#eff6ff}.purchase-stats>div:nth-child(4) svg{color:#d97706;background:#fffbeb}
+.purchase-stats>div:hover{transform:translateY(-5px);border-color:#c7d2fe;box-shadow:0 18px 38px rgba(79,70,229,.10)}
+.purchase-stats>div:hover svg{transform:translateY(-3px) rotate(2deg);color:#fff;background:linear-gradient(135deg,#6366f1,#7c3aed);box-shadow:0 10px 22px rgba(99,102,241,.22)}
+.purchase-stats span{font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.075em;color:#8491a6}
+.purchase-stats strong{font-size:21px;color:#0f172a;letter-spacing:-.025em}
+
+.purchase-tabs{gap:5px;padding:5px;border:1px solid #e3e8f0;border-radius:13px;background:#f7f9fd;box-shadow:inset 0 1px 2px rgba(15,23,42,.025);animation:purchaseEnter .48s ease .08s both}
+.purchase-tabs button{border:0;border-radius:9px;padding:10px 15px;color:#64748b;transition:.2s ease}
+.purchase-tabs button:hover{background:#fff;color:#4338ca}
+.purchase-tabs button.active{border:0;background:linear-gradient(135deg,#fff,#eef2ff);color:#4338ca;box-shadow:0 5px 15px rgba(79,70,229,.10),inset 0 0 0 1px #c7d2fe}
+
+.purchase-search{border-color:#dbe3ef;border-radius:12px;background:#fbfcff;color:#64748b;box-shadow:0 4px 15px rgba(15,23,42,.025);transition:.2s ease;animation:purchaseEnter .5s ease .1s both}
+.purchase-search:focus-within{background:#fff;border-color:#818cf8;box-shadow:0 0 0 4px rgba(99,102,241,.10),0 8px 22px rgba(79,70,229,.06)}
+.purchase-search input{background:transparent;color:#172033}
+
+.purchase-card{border-color:#e5eaf2;border-radius:18px;background:rgba(255,255,255,.97);box-shadow:0 11px 32px rgba(15,23,42,.05);animation:purchaseEnter .52s ease .13s both;transition:.22s ease}
+.purchase-card:hover{border-color:#dbe2ef;box-shadow:0 16px 40px rgba(15,23,42,.07)}
+.purchase-card th,.line-table th{position:sticky;top:0;z-index:1;background:#f7f9fd;color:#69768a;text-transform:uppercase;font-size:9px;letter-spacing:.085em;font-weight:900}
+.purchase-card td,.line-table td{color:#475569}
+.purchase-card tbody tr,.line-table tbody tr{transition:background .18s ease}
+.purchase-card tbody tr:hover,.line-table tbody tr:hover{background:#f8faff}
+.purchase-card tbody td:first-child{border-left:2px solid transparent;transition:.18s ease}
+.purchase-card tbody tr:hover td:first-child{border-left-color:#6366f1}
+.purchase-card td strong,.line-table td strong{color:#111827}
+
+.p-status{padding:6px 10px;letter-spacing:.025em;box-shadow:inset 0 0 0 1px rgba(15,23,42,.03)}
+.p-status.approved,.p-status.completed,.p-status.received,.p-status.accepted{background:#ecfdf3;color:#027a48}
+.p-status.draft{background:#fff7ed;color:#b45309}.p-status.partially_received,.p-status.sent,.p-status.pending{background:#eef2ff;color:#4338ca}.p-status.cancelled,.p-status.rejected{background:#fef2f2;color:#b91c1c}
+
+.row-actions{flex-wrap:wrap}.row-actions button{border-radius:9px;background:#fff}
+.row-actions button:hover svg{transform:scale(1.06)}
+.row-actions button svg{transition:transform .18s ease}
+
+.line-title{padding-top:4px}.line-title h3{color:#0f172a;letter-spacing:-.02em}
+.line-table{border:1px solid #edf0f5;border-radius:13px}
+.line-table input,.line-table select,.p-form-grid input,.p-form-grid select,.notes textarea{border-color:#dbe3ef;border-radius:10px;transition:border-color .2s ease,box-shadow .2s ease}
+.line-table input:focus,.line-table select:focus,.p-form-grid input:focus,.p-form-grid select:focus,.notes textarea:focus{outline:none;border-color:#818cf8;box-shadow:0 0 0 4px rgba(99,102,241,.10)}
+.remove{transition:.18s ease}.remove:hover:not(:disabled){transform:scale(1.06);background:#fecaca}
+
+.totals{padding:15px;border:1px solid #e5eaf2;border-radius:13px;background:linear-gradient(180deg,#fbfcff,#fff)}
+.totals .grand{color:#312e81;font-weight:900}
+
+.p-modal-bg{background:rgba(15,23,42,.60);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);animation:purchaseEnter .2s ease both}
+.p-modal{border:1px solid rgba(255,255,255,.72);border-radius:20px;box-shadow:0 30px 85px rgba(15,23,42,.30);animation:purchaseModalIn .3s cubic-bezier(.2,.75,.25,1) both}
+.p-modal-head{position:sticky;top:0;z-index:8;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.p-modal-head h2{color:#0f172a;letter-spacing:-.025em}.p-modal-head>button{display:grid;place-items:center;transition:.18s ease}.p-modal-head>button:hover{background:#f1f5f9;transform:rotate(4deg);border-color:#cbd5e1}
+.p-form-grid label,.notes{color:#475569;font-size:12px;font-weight:800}
+.p-modal-actions{position:sticky;bottom:-22px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);padding-bottom:2px}
+
+.accept-grn-btn,button.accept-grn-btn{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease!important}
+.accept-grn-btn:hover,button.accept-grn-btn:hover{transform:translateY(-2px);border-color:#818cf8!important;box-shadow:0 7px 16px rgba(79,70,229,.11)!important}
+
+@media(max-width:900px){.purchase-stats{grid-template-columns:1fr 1fr}.purchase-tabs{overflow-x:auto}.purchase-tabs button{white-space:nowrap}}
+@media(max-width:650px){.purchase-head{padding:19px}.purchase-actions{width:100%;flex-wrap:wrap}.purchase-stats{grid-template-columns:1fr}.purchase-tabs{border-radius:11px}.p-modal form,.view-body{padding:17px}}
+@media(prefers-reduced-motion:reduce){.purchase-head,.purchase-stats>div,.purchase-tabs,.purchase-search,.purchase-card,.p-modal-bg,.p-modal,.p-primary:hover::after,.complete-btn:hover::after{animation:none!important}.purchase-stats>div,.p-primary,.p-secondary,.row-actions button,.p-modal-head>button{transition:none!important}}
+

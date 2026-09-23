@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "./supabase";
-import "./Customers.css";
+import "./Cashiers.css";
 
 const emptyForm = {
   cashier_code: "",

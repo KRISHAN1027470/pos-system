@@ -13,7 +13,14 @@ import {
 import { supabase } from "./supabase";
 import "./Invoices.css";
 
-function Invoices({ activeBranch, branchId: activeBranchId, branches: appBranches = [], requestBranchSwitch }) {
+function Invoices({
+  activeBranch,
+  branchId: activeBranchId,
+  branches: appBranches = [],
+  requestBranchSwitch,
+  openInvoiceNumber = "",
+  onInvoiceOpened,
+}) {
   const [invoices, setInvoices] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [invoiceItems, setInvoiceItems] = useState([]);
@@ -57,6 +64,20 @@ function Invoices({ activeBranch, branchId: activeBranchId, branches: appBranche
       closeInvoice();
     }
   }, [activeBranchId, activeBranch?.id]);
+
+  useEffect(() => {
+    if (!openInvoiceNumber || loading || invoices.length === 0) return;
+
+    const invoice = invoices.find(
+      (row) => String(row.invoice_number) === String(openInvoiceNumber)
+    );
+
+    if (!invoice) return;
+
+    setBranchFilter(invoice.branch_id || activeBranchId || activeBranch?.id || "");
+    viewInvoice(invoice);
+    onInvoiceOpened?.(invoice);
+  }, [openInvoiceNumber, loading, invoices]);
 
   async function loadBaseData() {
     setLoading(true);
