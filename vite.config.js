@@ -16,9 +16,9 @@ export default defineConfig({
       ],
 
       manifest: {
-        name: "Point of Sales",
-        short_name: "Point of Sales",
-        description: "Point of Sales Point of Sale System",
+        name: "PrimePOS",
+        short_name: "PrimePOS",
+        description: "PrimePOS Point of Sale System",
 
         start_url: "/",
         scope: "/",

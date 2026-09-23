@@ -105,7 +105,7 @@ function PrivateApp() {
   const [profileError, setProfileError] = useState("");
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [invoiceToOpen, setInvoiceToOpen] = useState("");
-  const [companyName, setCompanyName] = useState("Point of Sales");
+  const [companyName, setCompanyName] = useState("PrimePOS");
   const [businessSetup, setBusinessSetup] = useState({
     company_name: "",
     address: "",
@@ -310,7 +310,7 @@ function PrivateApp() {
       if (data?.company_name?.trim()) {
         setCompanyName(data.company_name.trim());
       } else {
-        setCompanyName("Point of Sales");
+        setCompanyName("PrimePOS");
       }
     }
 
@@ -657,7 +657,7 @@ function PrivateApp() {
       >
         <div style={{ textAlign: "center" }}>
           <ShieldCheck size={42} />
-          <h2>Loading Point of Sales...</h2>
+          <h2>Loading PrimePOS...</h2>
           <p>Checking your account and permissions.</p>
         </div>
       </div>
@@ -806,7 +806,7 @@ function PrivateApp() {
         <div style={{ textAlign: "center" }}>
           <ShieldCheck size={42} />
           <h2>Checking subscription...</h2>
-          <p>Verifying your Point of Sales access.</p>
+          <p>Verifying your PrimePOS access.</p>
         </div>
       </div>
     );
@@ -973,7 +973,7 @@ function PrivateApp() {
         <section className="branch-shell">
           <aside className="branch-brand">
             <div className="branch-logo"><ShoppingCart size={28} /></div>
-            <div className="branch-kicker">Point of Sales • Secure Workspace</div>
+            <div className="branch-kicker">PrimePOS • Secure Workspace</div>
             <h2>Select your workspace.</h2>
             <p>Choose the branch you want to operate. Each location stays protected so sales, stock and daily operations remain secure.</p>
 
@@ -984,14 +984,14 @@ function PrivateApp() {
             </div>
 
             <div className="branch-support">
-              Need help with Point of Sales?<br />
+              Need help with PrimePOS?<br />
               <a href="tel:+94769696491">Support: 076 969 6491</a>
             </div>
           </aside>
 
           <main className="branch-main">
             <div className="branch-mobile-logo">
-              <span><ShoppingCart size={21} /></span> Point of Sales
+              <span><ShoppingCart size={21} /></span> PrimePOS
             </div>
 
             <h1>Select Branch</h1>
@@ -1157,7 +1157,7 @@ function PrivateApp() {
         </nav>
 
         <div style={{ marginTop: "auto", padding: "14px 12px", fontSize: "12px", lineHeight: 1.5, opacity: 0.9 }}>
-          <div style={{ fontWeight: 700 }}>Need help with Point of Sales?</div>
+          <div style={{ fontWeight: 700 }}>Need help with PrimePOS?</div>
           <a href="tel:+94769696491" style={{ color: "inherit", textDecoration: "none", fontWeight: 800 }}>
             Support: 076 969 6491
           </a>

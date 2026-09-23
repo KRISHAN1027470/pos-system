@@ -187,15 +187,15 @@ export default function Login() {
       <main className="login-shell">
         <section className="login-showcase">
           <div className="showcase-grid" />
+          <div className="showcase-glow showcase-glow-one" />
+          <div className="showcase-glow showcase-glow-two" />
 
           <div className="showcase-top">
-            <div className="showcase-brand">
-              <div className="showcase-logo">
-                <ShoppingCart size={28} strokeWidth={2.2} />
-              </div>
-              <div>
-                <strong>Point of Sales</strong>
-                <span>Business Management Suite</span>
+            <div className="showcase-brand primepos-code-brand">
+              <div className="primepos-code-mark" aria-hidden="true">P</div>
+              <div className="primepos-code-copy">
+                <strong className="primepos-code-name"><span>Point of Sales</span></strong>
+                <span className="primepos-code-subtitle">Business Management Suite</span>
               </div>
             </div>
 
@@ -272,16 +272,6 @@ export default function Login() {
         </section>
 
         <section className="login-panel">
-          <div className="mobile-brand">
-            <div className="mobile-brand-logo">
-              <ShoppingCart size={24} />
-            </div>
-            <div>
-              <strong>Point of Sales</strong>
-              <span>Point of Sale Management System</span>
-            </div>
-          </div>
-
           <div className="login-card">
             <div className="login-card-head">
               <div className="login-mini-badge">
@@ -468,7 +458,7 @@ export default function Login() {
             </div>
 
             <div className="mobile-support">
-              <span>Need help with Point of Sales?</span>
+              <span>Need help?</span>
               <a href="tel:+94769696491">076 969 6491</a>
             </div>
           </div>
