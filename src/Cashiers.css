@@ -1,0 +1,73 @@
+/* LE POS — Cashiers Premium UI */
+@keyframes cashierEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cashierModal{from{opacity:0;transform:translateY(18px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes cashierSweep{from{transform:translateX(-160%) skewX(-18deg)}to{transform:translateX(380%) skewX(-18deg)}}
+
+.customers-page{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:18px}
+.customers-page:before,.customers-page:after{content:"";position:fixed;z-index:-1;pointer-events:none;border-radius:999px;filter:blur(20px)}
+.customers-page:before{width:300px;height:300px;right:4%;top:115px;background:rgba(99,102,241,.055)}
+.customers-page:after{width:250px;height:250px;left:18%;bottom:4%;background:rgba(14,165,233,.045)}
+
+.customer-heading{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 24px;border:1px solid #e5eaf2;border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,250,255,.96));box-shadow:0 12px 38px rgba(15,23,42,.06);animation:cashierEnter .42s ease both}
+.customer-heading:after{content:"";position:absolute;width:190px;height:190px;right:-65px;top:-112px;border-radius:50%;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(14,165,233,.03));pointer-events:none}
+.customer-heading h2{position:relative;z-index:1;margin:0;font-size:28px;letter-spacing:-.04em;color:#0f172a}
+.customer-heading p{position:relative;z-index:1;margin:6px 0 0;color:#64748b}
+.primary-btn,.secondary-btn{min-height:42px;padding:0 16px;border-radius:11px;font:inherit;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.primary-btn{position:relative;z-index:1;overflow:hidden;border:0;color:#fff;background:linear-gradient(135deg,#111827,#27356b 58%,#4f46e5);box-shadow:0 9px 22px rgba(30,41,59,.18);transition:.2s ease}
+.primary-btn:after{content:"";position:absolute;width:60px;height:180%;top:-40%;left:-95px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent)}
+.primary-btn:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(79,70,229,.22)}
+.primary-btn:hover:after{animation:cashierSweep .75s ease}
+.secondary-btn{border:1px solid #dbe3ef;background:#fff;color:#334155;transition:.18s ease}
+.secondary-btn:hover{transform:translateY(-1px);border-color:#a5b4fc;background:#f8faff;color:#4338ca}
+
+.customer-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.customer-stat{position:relative;overflow:hidden;min-height:108px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;border:1px solid #e5eaf2;border-radius:18px;background:linear-gradient(145deg,#fff,#fbfcff);box-shadow:0 9px 28px rgba(15,23,42,.045);animation:cashierEnter .46s ease both;transition:.22s ease}
+.customer-stat:nth-child(2){animation-delay:.055s}.customer-stat:nth-child(3){animation-delay:.11s}
+.customer-stat:before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 5px 5px 0;background:linear-gradient(180deg,#6366f1,#8b5cf6)}
+.customer-stat:nth-child(2):before{background:linear-gradient(180deg,#10b981,#059669)}
+.customer-stat:nth-child(3):before{background:linear-gradient(180deg,#94a3b8,#475569)}
+.customer-stat svg{width:48px;height:48px;padding:12px;border-radius:15px;color:#5b61ed;background:#eef2ff;transition:.22s ease}
+.customer-stat:nth-child(2) svg{color:#059669;background:#ecfdf5}.customer-stat:nth-child(3) svg{color:#64748b;background:#f1f5f9}
+.customer-stat:hover{transform:translateY(-5px);border-color:#c7d2fe;box-shadow:0 18px 38px rgba(79,70,229,.10)}
+.customer-stat:hover svg{transform:translateY(-3px) rotate(2deg);color:#fff;background:linear-gradient(135deg,#6366f1,#7c3aed);box-shadow:0 10px 22px rgba(99,102,241,.22)}
+.customer-stat span{display:block;color:#8491a6;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.075em}
+.customer-stat strong{display:block;margin-top:5px;color:#0f172a;font-size:26px;letter-spacing:-.035em}
+
+.customer-table-card{overflow:hidden;border:1px solid #e5eaf2;border-radius:18px;background:rgba(255,255,255,.97);box-shadow:0 11px 32px rgba(15,23,42,.05);animation:cashierEnter .52s ease .12s both;transition:.22s ease}
+.customer-table-card:hover{border-color:#dbe2ef;box-shadow:0 16px 40px rgba(15,23,42,.07)}
+.table-toolbar{padding:17px 18px;border-bottom:1px solid #edf0f5;background:linear-gradient(180deg,#fff,#fbfcff)}
+.search-box{max-width:400px;min-height:43px;padding:0 13px;display:flex;align-items:center;gap:9px;border:1px solid #dbe3ef;border-radius:11px;background:#fbfcff;color:#64748b;transition:.2s ease}
+.search-box:focus-within{background:#fff;border-color:#818cf8;box-shadow:0 0 0 4px rgba(99,102,241,.10),0 8px 22px rgba(79,70,229,.06)}
+.search-box input{width:100%;border:0;outline:0;background:transparent;font:inherit;color:#172033}
+.table-wrapper{overflow-x:auto}
+.customer-table-card table{width:100%;border-collapse:collapse;min-width:850px}
+.customer-table-card th,.customer-table-card td{padding:13px 16px;text-align:left;border-bottom:1px solid #edf1f5}
+.customer-table-card th{background:#f7f9fd;color:#69768a;text-transform:uppercase;font-size:9px;letter-spacing:.09em;font-weight:900}
+.customer-table-card td{color:#475569;font-size:13px}
+.customer-table-card tbody tr{transition:background .18s ease}
+.customer-table-card tbody tr:hover{background:linear-gradient(90deg,#f8faff,#fbfcff)}
+.customer-table-card tbody td:first-child{border-left:2px solid transparent;transition:.18s ease}
+.customer-table-card tbody tr:hover td:first-child{border-left-color:#6366f1}
+.customer-table-card td strong{color:#111827}
+.action-buttons{display:flex;align-items:center;gap:7px}
+.icon-btn{width:36px;height:36px;display:grid;place-items:center;border:1px solid #e2e8f0;border-radius:9px;background:#fff;color:#64748b;cursor:pointer;transition:.18s ease}
+.icon-btn:hover{transform:translateY(-2px);background:#eef2ff;color:#4f46e5;border-color:#c7d2fe;box-shadow:0 6px 14px rgba(79,70,229,.10)}
+.icon-btn.delete:hover{background:#fef2f2;color:#dc2626;border-color:#fecaca;box-shadow:0 6px 14px rgba(220,38,38,.08)}
+
+.modal-overlay{position:fixed;inset:0;z-index:1300;display:grid;place-items:center;padding:18px;background:rgba(15,23,42,.58);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.customer-modal{width:min(650px,100%);max-height:92vh;overflow:auto;border:1px solid rgba(255,255,255,.72);border-radius:20px;background:#fff;box-shadow:0 30px 85px rgba(15,23,42,.30);animation:cashierModal .3s cubic-bezier(.2,.75,.25,1) both}
+.modal-header{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid #e5e7eb;background:rgba(255,255,255,.94);backdrop-filter:blur(14px)}
+.modal-header h3{margin:0;color:#0f172a;font-size:20px;letter-spacing:-.025em}
+.close-btn{width:36px;height:36px;display:grid;place-items:center;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#64748b;cursor:pointer;transition:.18s ease}
+.close-btn:hover{background:#f1f5f9;color:#0f172a;transform:rotate(4deg)}
+.customer-modal form{padding:22px}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
+.form-group{display:flex;flex-direction:column;gap:7px}.form-group.full{grid-column:1/-1}
+.form-group label{color:#475569;font-size:12px;font-weight:800}
+.form-group input,.form-group select{box-sizing:border-box;width:100%;min-height:42px;padding:9px 11px;border:1px solid #dbe3ef;border-radius:10px;background:#fff;font:inherit;color:#172033;outline:0;transition:.2s ease}
+.form-group input:focus,.form-group select:focus{border-color:#818cf8;box-shadow:0 0 0 4px rgba(99,102,241,.11)}
+.form-group input[readonly],.form-group select:disabled{background:#f8fafc;color:#64748b}
+.modal-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:22px;padding-top:18px;border-top:1px solid #eef2f7}
+
+@media(max-width:800px){.customer-heading{align-items:stretch;flex-direction:column;padding:19px}.customer-heading .primary-btn{width:100%}.customer-stat-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-group.full{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){.customer-heading,.customer-stat,.customer-table-card,.customer-modal,.primary-btn:hover:after{animation:none!important}.customer-stat,.primary-btn,.secondary-btn,.icon-btn,.close-btn{transition:none!important}}

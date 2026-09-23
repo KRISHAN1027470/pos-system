@@ -15,7 +15,13 @@ import {
 import { supabase } from "./supabase";
 import "./Quotes.css";
 
-function Quotes({ activeBranch, branchId: activeBranchId, branches: appBranches = [], requestBranchSwitch }) {
+function Quotes({
+  activeBranch,
+  branchId: activeBranchId,
+  branches: appBranches = [],
+  requestBranchSwitch,
+  onInvoiceCreated,
+}) {
   const [customers, setCustomers] = useState([]);
   const [branches, setBranches] = useState([]);
   const [items, setItems] = useState([]);
@@ -41,6 +47,7 @@ function Quotes({ activeBranch, branchId: activeBranchId, branches: appBranches 
   const [shareWhatsAppNumber, setShareWhatsAppNumber] = useState("");
   const [editingQuoteId, setEditingQuoteId] = useState(null);
   const [editingQuoteNumber, setEditingQuoteNumber] = useState("");
+  const [editingForInvoice, setEditingForInvoice] = useState(false);
 
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [selectedQuoteItems, setSelectedQuoteItems] = useState([]);
@@ -613,24 +620,52 @@ function Quotes({ activeBranch, branchId: activeBranchId, branches: appBranches 
   }
 
 
-  async function startEditQuote() {
+  async function startEditQuote(forInvoice = false) {
     if (!selectedQuote) return;
 
-    if (selectedQuote.status !== "DRAFT") {
-      alert("Only DRAFT quotations can be edited.");
+    const quote = selectedQuote;
+
+    if (quote.status !== "DRAFT" && !(forInvoice && quote.status === "ACCEPTED")) {
+      alert("Only DRAFT quotations can be edited. Accepted quotations can be edited from the Convert to Invoice section.");
       return;
     }
 
-    if (detailsLoading) return;
-
-    const quote = selectedQuote;
-    const quoteItems = selectedQuoteItems || [];
+    if (detailsLoading || statusProcessing) return;
 
     if (quote.branch_id && quote.branch_id !== (activeBranchId || activeBranch?.id)) {
       alert("Switch to this quotation's branch and unlock it before editing.");
       requestBranchSwitch?.(quote.branch_id);
       return;
     }
+
+    // The existing update_quote_draft RPC edits DRAFT quotations.
+    // When editing an ACCEPTED quote before invoicing, safely return it to DRAFT first.
+    if (forInvoice && quote.status === "ACCEPTED") {
+      const confirmed = window.confirm(
+        `Edit ${quote.quote_number} before creating the invoice?\n\nThe quotation will return to DRAFT while you edit it. After you save, it will be accepted again automatically and returned to the invoice screen.`
+      );
+
+      if (!confirmed) return;
+
+      try {
+        setStatusProcessing(true);
+
+        const { error } = await supabase.rpc("update_quote_status", {
+          p_quote_id: quote.id,
+          p_status: "DRAFT",
+        });
+
+        if (error) throw error;
+      } catch (error) {
+        console.error("Prepare quotation for invoice edit error:", error);
+        alert(error.message || "Unable to open the quotation for editing.");
+        return;
+      } finally {
+        setStatusProcessing(false);
+      }
+    }
+
+    const quoteItems = selectedQuoteItems || [];
 
     const editCart = quoteItems.map((line) => {
       const masterItem = items.find((row) => row.id === line.item_id);
@@ -662,6 +697,7 @@ function Quotes({ activeBranch, branchId: activeBranchId, branches: appBranches 
 
     setEditingQuoteId(quote.id);
     setEditingQuoteNumber(quote.quote_number || "");
+    setEditingForInvoice(Boolean(forInvoice));
     setQuoteType(quote.quote_type || "NON_VAT");
     setBranchId(activeBranchId || activeBranch?.id || quote.branch_id || "");
     setCustomerId(quote.customer_id || "");
@@ -686,6 +722,7 @@ function Quotes({ activeBranch, branchId: activeBranchId, branches: appBranches 
   function cancelEditQuote() {
     setEditingQuoteId(null);
     setEditingQuoteNumber("");
+    setEditingForInvoice(false);
     setCart([]);
     setCustomerId("");
     setCashierId("");
@@ -799,12 +836,30 @@ function Quotes({ activeBranch, branchId: activeBranchId, branches: appBranches 
 
       if (error) throw error;
 
+      const editedQuoteId = editingQuoteId;
+      const returnToInvoice = editingForInvoice;
+
+      if (returnToInvoice) {
+        const { error: acceptError } = await supabase.rpc(
+          "update_quote_status",
+          {
+            p_quote_id: editedQuoteId,
+            p_status: "ACCEPTED",
+          }
+        );
+
+        if (acceptError) throw acceptError;
+      }
+
       alert(
-        `${editingQuoteNumber || "Quotation"} updated successfully.`
+        returnToInvoice
+          ? `${editingQuoteNumber || "Quotation"} updated successfully. Review the final bill and create the invoice when ready.`
+          : `${editingQuoteNumber || "Quotation"} updated successfully.`
       );
 
       setEditingQuoteId(null);
       setEditingQuoteNumber("");
+      setEditingForInvoice(false);
       setCart([]);
       setCustomerId("");
       setCashierId("");
@@ -814,6 +869,21 @@ function Quotes({ activeBranch, branchId: activeBranchId, branches: appBranches 
 
       await loadData();
       await loadBranchStock(branchId);
+
+      if (returnToInvoice) {
+        const { data: refreshedQuote, error: refreshedQuoteError } =
+          await supabase
+            .from("quotes")
+            .select("*")
+            .eq("id", editedQuoteId)
+            .single();
+
+        if (refreshedQuoteError) {
+          throw refreshedQuoteError;
+        }
+
+        await viewQuote(refreshedQuote);
+      }
     } catch (error) {
       console.error("Update quotation error:", error);
       alert(
@@ -1169,10 +1239,40 @@ function Quotes({ activeBranch, branchId: activeBranchId, branches: appBranches 
       ? `<img src="${escapeHtml(settings.logo_url)}" alt="Logo" class="logo">`
       : "";
 
+    // Match the normal POS/Invoices print header:
+    // prefer the invoice branch details, then fall back to company settings.
+    const invoiceAddress =
+      branch?.address ||
+      settings.company_address ||
+      "No: 120, First Cross Street, Colombo - 11";
+
+    const invoicePhone =
+      branch?.phone ||
+      settings.company_phone ||
+      "077 305 6626 / 011 243 0137";
+
+    const invoiceEmail =
+      branch?.email ||
+      settings.company_email ||
+      "";
+
+    const showAddress =
+      settings.show_address !== false &&
+      settings.receipt_show_branch_address !== false;
+
+    const showTelephone =
+      settings.show_telephone !== false &&
+      settings.receipt_show_branch_phone !== false;
+
     const businessDetails = [
-      settings.receipt_show_branch_address !== false ? branch?.address : "",
-      settings.receipt_show_branch_phone !== false ? branch?.phone : "",
-    ].filter(Boolean).map((v) => `<div>${escapeHtml(v)}</div>`).join("");
+      invoiceAddress || "",
+      (invoicePhone || invoiceEmail)
+        ? [invoicePhone, invoiceEmail].filter(Boolean).join(" • ")
+        : "",
+    ]
+      .filter(Boolean)
+      .map((v) => `<div>${escapeHtml(v)}</div>`)
+      .join("");
 
     const rows = (invoiceLines || []).map((line) => {
       const qty = Number(line.quantity || 0);
@@ -1358,9 +1458,15 @@ Stock will be checked and reduced after conversion.`
         alert("Quotation converted successfully, but the invoice number was not returned for automatic printing.");
       }
 
+      const createdInvoiceNumber = result?.invoice_number || "";
+
       closeQuote();
       await loadData();
       await loadBranchStock(branchId);
+
+      if (createdInvoiceNumber) {
+        onInvoiceCreated?.(createdInvoiceNumber);
+      }
     } catch (error) {
       console.error(
         "Convert quotation error:",
@@ -1517,7 +1623,11 @@ Stock will be checked and reduced after conversion.`
           }}
         >
           <div>
-            <strong>Editing {editingQuoteNumber}</strong>
+            <strong>
+              {editingForInvoice
+                ? `Editing ${editingQuoteNumber} Before Invoice`
+                : `Editing ${editingQuoteNumber}`}
+            </strong>
             <div style={{ color: "#92400e", fontSize: "12px", marginTop: "3px" }}>
               Update the customer, cashier, date, notes, items, quantities or discounts, then save.
             </div>
@@ -2120,7 +2230,9 @@ Stock will be checked and reduced after conversion.`
                 ? "Saving..."
                 : "Creating..."
               : editingQuoteId
-              ? "Save Changes"
+              ? editingForInvoice
+                ? "Save & Continue to Invoice"
+                : "Save Changes"
               : "Create Quotation"}
           </button>
         </div>
@@ -2435,7 +2547,7 @@ Stock will be checked and reduced after conversion.`
                 {selectedQuote.status === "DRAFT" && (
                   <button
                     type="button"
-                    onClick={startEditQuote}
+                    onClick={() => startEditQuote(false)}
                     disabled={detailsLoading || statusProcessing}
                   >
                     <Pencil size={17} />
@@ -2488,10 +2600,55 @@ Stock will be checked and reduced after conversion.`
               {selectedQuote.status === "ACCEPTED" && (
                 <div className="quote-convert-box">
                   <div>
-                    <strong>Convert to Invoice</strong>
+                    <strong>Review & Convert to Invoice</strong>
                     <span>
-                      Choose full, partial, or credit payment. Stock will be checked and reduced when the invoice is created.
+                      Need to change the bill first? Edit the quotation, save it, review the updated total, then create the invoice.
                     </span>
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      padding: "12px",
+                      border: "1px solid #bfdbfe",
+                      borderRadius: "10px",
+                      background: "#eff6ff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "12px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div>
+                      <strong style={{ display: "block", color: "#1e3a8a" }}>
+                        Want to edit this bill before invoicing?
+                      </strong>
+                      <span style={{ display: "block", marginTop: "3px", color: "#475569", fontSize: "12px" }}>
+                        Change items, quantity, price, discount, customer, cashier or notes before the final invoice is created.
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => startEditQuote(true)}
+                      disabled={detailsLoading || statusProcessing}
+                      style={{
+                        border: 0,
+                        borderRadius: "9px",
+                        padding: "10px 14px",
+                        background: "#2563eb",
+                        color: "#fff",
+                        fontWeight: 800,
+                        cursor: detailsLoading || statusProcessing ? "not-allowed" : "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "7px",
+                      }}
+                    >
+                      <Pencil size={16} />
+                      Edit Before Invoice
+                    </button>
                   </div>
 
                   {selectedQuote.customer_id && (

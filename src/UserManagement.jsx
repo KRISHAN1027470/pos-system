@@ -8,6 +8,7 @@ import {
   UserX,
 } from "lucide-react";
 import { supabase } from "./supabase";
+import "./UserManagement.css";
 
 const ROLES = ["ADMIN", "MANAGER", "CASHIER"];
 const STATUSES = ["PENDING", "ACTIVE", "INACTIVE"];
@@ -149,7 +150,7 @@ export default function UserManagement({ currentUser, branches = [] }) {
 
   if (String(currentUser?.role || "").toUpperCase() !== "ADMIN") {
     return (
-      <div style={styles.notice}>
+      <div className="user-management-notice" style={styles.notice}>
         <ShieldCheck size={22} />
         Only administrators can manage user accounts.
       </div>
@@ -157,8 +158,8 @@ export default function UserManagement({ currentUser, branches = [] }) {
   }
 
   return (
-    <div style={{ display: "grid", gap: "18px" }}>
-      <div style={styles.header}>
+    <div className="user-management-page" style={{ display: "grid", gap: "18px" }}>
+      <div className="user-management-header" style={styles.header}>
         <div>
           <h2 style={{ margin: 0 }}>User Management</h2>
           <p style={styles.muted}>
@@ -166,25 +167,25 @@ export default function UserManagement({ currentUser, branches = [] }) {
           </p>
         </div>
 
-        <button onClick={loadUsers} disabled={loading} style={styles.secondaryButton}>
+        <button onClick={loadUsers} disabled={loading} className="um-refresh-btn" style={styles.secondaryButton}>
           <RefreshCw size={17} />
           Refresh
         </button>
       </div>
 
-      <div style={styles.summaryGrid}>
-        <div style={styles.summaryCard}>
+      <div className="user-management-summary" style={styles.summaryGrid}>
+        <div className="user-management-stat" style={styles.summaryCard}>
           <span style={styles.muted}>Total Users</span>
           <strong style={styles.summaryNumber}>{users.length}</strong>
         </div>
-        <div style={styles.summaryCard}>
+        <div className="user-management-stat" style={styles.summaryCard}>
           <span style={styles.muted}>Pending Approval</span>
           <strong style={styles.summaryNumber}>{pendingCount}</strong>
         </div>
       </div>
 
-      <div style={styles.toolbar}>
-        <div style={styles.searchWrap}>
+      <div className="user-management-toolbar" style={styles.toolbar}>
+        <div className="user-management-search" style={styles.searchWrap}>
           <Search size={18} />
           <input
             value={search}
@@ -195,17 +196,17 @@ export default function UserManagement({ currentUser, branches = [] }) {
         </div>
       </div>
 
-      {error && <div style={styles.error}>{error}</div>}
-      {message && <div style={styles.success}>{message}</div>}
+      {error && <div className="um-message um-error" style={styles.error}>{error}</div>}
+      {message && <div className="um-message um-success" style={styles.success}>{message}</div>}
 
-      <div style={styles.tableCard}>
+      <div className="user-management-table-card" style={styles.tableCard}>
         {loading ? (
           <div style={styles.empty}>Loading users...</div>
         ) : filteredUsers.length === 0 ? (
           <div style={styles.empty}>No users found.</div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={styles.table}>
+            <table className="user-management-table" style={styles.table}>
               <thead>
                 <tr>
                   <th style={styles.th}>User</th>
@@ -231,7 +232,7 @@ export default function UserManagement({ currentUser, branches = [] }) {
                       <td style={styles.td}>
                         <strong>{user.full_name || "Unnamed user"}</strong>
                         <div style={styles.email}>{user.email || "-"}</div>
-                        {isSelf && <span style={styles.youBadge}>YOU</span>}
+                        {isSelf && <span className="um-you-badge" style={styles.youBadge}>YOU</span>}
                       </td>
 
                       <td style={styles.td}>
@@ -241,7 +242,7 @@ export default function UserManagement({ currentUser, branches = [] }) {
                             updateDraft(user.id, "role", event.target.value)
                           }
                           disabled={saving}
-                          style={styles.select}
+                          className="um-select" style={styles.select}
                         >
                           {ROLES.map((role) => (
                             <option key={role} value={role}>
@@ -258,7 +259,7 @@ export default function UserManagement({ currentUser, branches = [] }) {
                             updateDraft(user.id, "branch_id", event.target.value)
                           }
                           disabled={saving}
-                          style={styles.select}
+                          className="um-select" style={styles.select}
                         >
                           <option value="">All / No fixed branch</option>
                           {branches.map((branch) => (
@@ -276,7 +277,7 @@ export default function UserManagement({ currentUser, branches = [] }) {
                             updateDraft(user.id, "status", event.target.value)
                           }
                           disabled={saving || isSelf}
-                          style={styles.select}
+                          className="um-select" style={styles.select}
                         >
                           {STATUSES.map((status) => (
                             <option key={status} value={status}>
@@ -295,7 +296,7 @@ export default function UserManagement({ currentUser, branches = [] }) {
                                 saveUser(user.id, { status: "ACTIVE" })
                               }
                               disabled={saving}
-                              style={styles.approveButton}
+                              className="um-action um-approve" style={styles.approveButton}
                             >
                               <CheckCircle2 size={16} />
                               {saving ? "Saving..." : "Approve"}
@@ -306,7 +307,7 @@ export default function UserManagement({ currentUser, branches = [] }) {
                             type="button"
                             onClick={() => saveUser(user.id)}
                             disabled={saving}
-                            style={styles.saveButton}
+                            className="um-action um-save" style={styles.saveButton}
                           >
                             <UserCog size={16} />
                             {saving ? "Saving..." : "Save"}
@@ -319,7 +320,7 @@ export default function UserManagement({ currentUser, branches = [] }) {
                                 saveUser(user.id, { status: "INACTIVE" })
                               }
                               disabled={saving}
-                              style={styles.deactivateButton}
+                              className="um-action um-deactivate" style={styles.deactivateButton}
                             >
                               <UserX size={16} />
                               Deactivate

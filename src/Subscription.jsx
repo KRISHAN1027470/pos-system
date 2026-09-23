@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CreditCard, CheckCircle2, Clock3, XCircle, Building2, Copy, Check } from "lucide-react";
 import { supabase } from "./supabase";
+import "./Subscription.css";
 
 const money = (value) =>
   `Rs. ${Number(value || 0).toLocaleString("en-LK", {
@@ -75,7 +76,7 @@ export default function Subscription({ subscription, onActivated }) {
   const pending = payments.find((item) => item.status === "PENDING");
 
   return (
-    <div style={{ maxWidth: 1050, margin: "0 auto", padding: 24 }}>
+    <div className="subscription-page" style={{ maxWidth: 1050, margin: "0 auto", padding: 24 }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ marginBottom: 6 }}>Subscription & Billing</h1>
         <p style={{ color: "#667085", marginTop: 0 }}>

@@ -47,3 +47,70 @@
     grid-template-columns:1fr;
   }
 }
+
+/* =========================================================
+   LE POS — Settings Premium UI Layer
+   Visual enhancement only; Supabase/save/upload logic unchanged.
+   ========================================================= */
+@keyframes settingsEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes settingsSweep{from{transform:translateX(-160%) skewX(-18deg)}to{transform:translateX(380%) skewX(-18deg)}}
+
+.settings-page{position:relative;isolation:isolate;gap:18px}
+.settings-page:before,.settings-page:after{content:"";position:fixed;z-index:-1;pointer-events:none;border-radius:999px;filter:blur(22px)}
+.settings-page:before{width:330px;height:330px;right:3%;top:110px;background:rgba(99,102,241,.055)}
+.settings-page:after{width:270px;height:270px;left:19%;bottom:3%;background:rgba(14,165,233,.045)}
+
+.settings-header{position:relative;overflow:hidden;padding:22px 24px;border:1px solid #e5eaf2;border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,250,255,.96));box-shadow:0 12px 38px rgba(15,23,42,.06);animation:settingsEnter .42s ease both}
+.settings-header:after{content:"";position:absolute;width:195px;height:195px;right:-68px;top:-115px;border-radius:50%;background:linear-gradient(135deg,rgba(99,102,241,.16),rgba(14,165,233,.03));pointer-events:none}
+.settings-header>div,.settings-header>button{position:relative;z-index:1}
+.settings-header h1{font-size:28px;letter-spacing:-.04em;color:#0f172a}.settings-header p{line-height:1.5}
+
+.settings-secondary-btn,.settings-primary-btn{position:relative;overflow:hidden;min-height:41px;border-radius:10px;transition:.18s ease}
+.settings-secondary-btn{border:1px solid #dbe3ef;background:#fff;color:#334155}
+.settings-secondary-btn:hover:not(:disabled){transform:translateY(-2px);border-color:#a5b4fc;background:#f8faff;color:#4338ca;box-shadow:0 7px 16px rgba(79,70,229,.08)}
+.settings-primary-btn{background:linear-gradient(135deg,#111827,#27356b 58%,#4f46e5);box-shadow:0 8px 18px rgba(30,41,59,.16)}
+.settings-primary-btn:after{content:"";position:absolute;width:55px;height:180%;top:-40%;left:-90px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);pointer-events:none}
+.settings-primary-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 25px rgba(79,70,229,.21)}
+.settings-primary-btn:hover:not(:disabled):after{animation:settingsSweep .7s ease}
+.settings-primary-btn:disabled,.settings-secondary-btn:disabled{opacity:.58;cursor:not-allowed}
+
+.settings-form{gap:18px}
+.settings-card{border-color:#e5eaf2;border-radius:19px;background:rgba(255,255,255,.98);box-shadow:0 11px 32px rgba(15,23,42,.05);animation:settingsEnter .5s ease .06s both}
+.settings-card:nth-child(2){animation-delay:.11s}
+.settings-card-header{padding:18px 20px;border-bottom-color:#edf0f5;background:linear-gradient(180deg,#fff,#fbfcff)}
+.settings-card-header h2{font-size:17px;color:#0f172a;letter-spacing:-.02em}.settings-card-header p{line-height:1.45;color:#8491a6}
+.settings-icon{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);color:#4f46e5;box-shadow:inset 0 0 0 1px rgba(99,102,241,.06);transition:.22s ease}
+.settings-card:hover .settings-icon{transform:translateY(-2px) rotate(2deg);color:#fff;background:linear-gradient(135deg,#6366f1,#7c3aed);box-shadow:0 8px 18px rgba(99,102,241,.18)}
+
+.settings-grid{gap:15px 17px;padding:20px}
+.settings-field>span{font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.055em;color:#64748b}
+.settings-field input,.settings-field textarea,.settings-field select{min-height:42px;border-color:#dbe3ef;border-radius:10px;background:#fbfcff;color:#172033;transition:.2s ease}
+.settings-field textarea{line-height:1.55}
+.settings-field input:hover,.settings-field textarea:hover,.settings-field select:hover{border-color:#c5cfdd;background:#fff}
+.settings-field input:focus,.settings-field textarea:focus,.settings-field select:focus{background:#fff;border-color:#818cf8;box-shadow:0 0 0 4px rgba(99,102,241,.10),0 7px 18px rgba(79,70,229,.04)}
+
+.settings-card>div[style*="marginTop"]{padding-left:20px;padding-right:20px;padding-bottom:20px}
+.settings-card>div[style*="marginBottom"]{padding:20px 20px 0}
+.settings-card>div[style*="gridTemplateColumns"]{margin-left:20px;margin-right:20px;padding:18px!important;border:1px solid #e5eaf2;border-radius:16px;background:linear-gradient(145deg,#fbfcff,#fff)}
+.settings-card>div[style*="gridTemplateColumns"]>div:first-child{border-color:#e0e7ff!important;border-radius:14px!important;background:linear-gradient(145deg,#f8faff,#fff)!important;box-shadow:inset 0 0 0 1px rgba(99,102,241,.025)}
+
+.settings-card label[style*="inline-flex"]{border-color:#dbe3ef!important;border-radius:10px!important;background:#fff!important;transition:.18s ease}
+.settings-card label[style*="inline-flex"]:hover{transform:translateY(-1px);border-color:#a5b4fc!important;color:#4338ca;box-shadow:0 7px 16px rgba(79,70,229,.07)}
+.settings-card button[style*="color: rgb(185"],.settings-card button[style*="color: #b91c1c"]{transition:.18s ease}
+.settings-card button[style*="color: rgb(185"]:hover,.settings-card button[style*="color: #b91c1c"]:hover{transform:translateY(-1px);background:#fef2f2!important;box-shadow:0 7px 16px rgba(185,28,28,.07)}
+
+.settings-card>div[style*="borderTop"]{margin-left:20px!important;margin-right:20px!important;border-top-color:#edf0f5!important}
+.settings-card>div[style*="borderTop"]>strong{color:#172033;font-size:15px;letter-spacing:-.01em}
+.settings-card>div[style*="borderTop"] label[style*="display: flex"]{padding:10px 12px;border:1px solid #e5eaf2;border-radius:10px;background:#fbfcff;transition:.18s ease}
+.settings-card>div[style*="borderTop"] label[style*="display: flex"]:hover{background:#f8faff;border-color:#c7d2fe;transform:translateY(-1px)}
+.settings-card input[type="checkbox"]{width:19px;height:19px;accent-color:#4f46e5;cursor:pointer}
+
+.receipt-header-options{gap:14px;padding:20px}
+.receipt-option-heading{color:#64748b;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.07em}
+.receipt-option-row{min-height:44px;border-color:#e5eaf2;border-radius:11px;background:#fbfcff;transition:.18s ease}
+.receipt-option-row:hover{transform:translateY(-1px);background:#f8faff;border-color:#c7d2fe;box-shadow:0 6px 14px rgba(79,70,229,.05)}
+.receipt-option-row input{accent-color:#4f46e5}
+
+@media(max-width:760px){.settings-header{padding:19px}.settings-header>.settings-secondary-btn{width:100%}.settings-grid{padding:16px}.settings-card>div[style*="gridTemplateColumns"]{margin-left:16px;margin-right:16px}.settings-card>div[style*="borderTop"]{margin-left:16px!important;margin-right:16px!important}}
+@media(prefers-reduced-motion:reduce){.settings-header,.settings-card,.settings-primary-btn:hover:after{animation:none!important}.settings-icon,.settings-primary-btn,.settings-secondary-btn,.settings-field input,.settings-field textarea,.settings-field select,.receipt-option-row{transition:none!important}}
+

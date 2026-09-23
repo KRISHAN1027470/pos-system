@@ -1,0 +1,63 @@
+/* =========================================================
+   LE POS — User Management Premium UI
+   ========================================================= */
+@keyframes umEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes umSweep{from{transform:translateX(-160%) skewX(-18deg)}to{transform:translateX(380%) skewX(-18deg)}}
+
+.user-management-page{position:relative;isolation:isolate}
+.user-management-page:before,.user-management-page:after{content:"";position:fixed;z-index:-1;pointer-events:none;border-radius:999px;filter:blur(22px)}
+.user-management-page:before{width:330px;height:330px;right:3%;top:110px;background:rgba(99,102,241,.055)}
+.user-management-page:after{width:270px;height:270px;left:19%;bottom:3%;background:rgba(14,165,233,.045)}
+
+.user-management-header{position:relative;overflow:hidden;padding:22px 24px!important;border:1px solid #e5eaf2;border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,250,255,.96));box-shadow:0 12px 38px rgba(15,23,42,.06);animation:umEnter .42s ease both}
+.user-management-header:after{content:"";position:absolute;width:195px;height:195px;right:-68px;top:-115px;border-radius:50%;background:linear-gradient(135deg,rgba(99,102,241,.16),rgba(14,165,233,.03));pointer-events:none}
+.user-management-header>div,.user-management-header>button{position:relative;z-index:1}
+.user-management-header h2{font-size:28px!important;letter-spacing:-.04em;color:#0f172a}
+.user-management-header p{line-height:1.5}
+
+.um-refresh-btn{position:relative;overflow:hidden;min-height:42px!important;border-color:#dbe3ef!important;border-radius:10px!important;color:#334155;transition:.18s ease}
+.um-refresh-btn:hover:not(:disabled){transform:translateY(-2px);border-color:#a5b4fc!important;background:#f8faff!important;color:#4338ca;box-shadow:0 7px 16px rgba(79,70,229,.08)}
+
+.user-management-summary{gap:14px!important}
+.user-management-stat{position:relative;overflow:hidden;min-height:105px;border-color:#e5eaf2!important;border-radius:18px!important;background:linear-gradient(145deg,#fff,#fbfcff)!important;box-shadow:0 9px 28px rgba(15,23,42,.045);animation:umEnter .48s ease both;transition:.22s ease}
+.user-management-stat:nth-child(2){animation-delay:.06s}
+.user-management-stat:before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 5px 5px 0;background:linear-gradient(180deg,#6366f1,#8b5cf6)}
+.user-management-stat:nth-child(2):before{background:linear-gradient(180deg,#f59e0b,#ea580c)}
+.user-management-stat:hover{transform:translateY(-5px);border-color:#c7d2fe!important;box-shadow:0 18px 38px rgba(79,70,229,.10)}
+.user-management-stat span{font-size:10px!important;font-weight:850;text-transform:uppercase;letter-spacing:.07em;color:#8491a6!important}
+.user-management-stat strong{font-size:29px!important;color:#0f172a;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+
+.user-management-toolbar{padding:15px 17px;border:1px solid #e5eaf2;border-radius:16px;background:rgba(255,255,255,.97);box-shadow:0 8px 25px rgba(15,23,42,.04);animation:umEnter .46s ease .05s both}
+.user-management-search{height:44px!important;box-sizing:border-box;border-color:#dbe3ef!important;border-radius:11px!important;background:#fbfcff!important;color:#64748b;transition:.2s ease}
+.user-management-search:focus-within{background:#fff!important;border-color:#818cf8!important;box-shadow:0 0 0 4px rgba(99,102,241,.10),0 7px 18px rgba(79,70,229,.05)}
+.user-management-search input{color:#172033;font:inherit}.user-management-search input::placeholder{color:#94a3b8}
+
+.um-message{border-radius:12px!important;padding:13px 15px!important;font-weight:650;animation:umEnter .25s ease both}
+.um-error{box-shadow:0 7px 18px rgba(180,35,24,.06)}.um-success{box-shadow:0 7px 18px rgba(6,118,71,.06)}
+
+.user-management-table-card{border-color:#e5eaf2!important;border-radius:18px!important;background:rgba(255,255,255,.98)!important;box-shadow:0 11px 32px rgba(15,23,42,.05);animation:umEnter .5s ease .1s both}
+.user-management-table th{position:sticky;top:0;z-index:2;padding:12px 14px!important;background:#f7f9fd!important;color:#69768a!important;font-size:9px!important;text-transform:uppercase;letter-spacing:.085em;font-weight:900}
+.user-management-table td{color:#475569;border-bottom-color:#edf1f5!important;font-size:12.5px}
+.user-management-table tbody tr{transition:background .18s ease}.user-management-table tbody tr:hover{background:linear-gradient(90deg,#f8faff,#fbfcff)}
+.user-management-table tbody td:first-child{border-left:2px solid transparent;transition:.18s ease}.user-management-table tbody tr:hover td:first-child{border-left-color:#6366f1}
+.user-management-table td strong{color:#111827}
+
+.um-you-badge{padding:4px 8px!important;background:#eef2ff!important;color:#4338ca!important;box-shadow:inset 0 0 0 1px rgba(99,102,241,.08);letter-spacing:.045em}
+.um-select{outline:0;min-height:39px;border-color:#dbe3ef!important;border-radius:9px!important;color:#334155;transition:.18s ease}
+.um-select:focus{border-color:#818cf8!important;box-shadow:0 0 0 4px rgba(99,102,241,.10)}
+.um-select:disabled{background:#f8fafc!important;color:#94a3b8}
+
+.um-action{position:relative;overflow:hidden;min-height:37px;transition:.18s ease}
+.um-action:hover:not(:disabled){transform:translateY(-2px)}
+.um-approve{background:linear-gradient(135deg,#059669,#047857)!important;box-shadow:0 7px 16px rgba(5,150,105,.14)}
+.um-approve:hover:not(:disabled){box-shadow:0 10px 22px rgba(5,150,105,.22)}
+.um-save{background:linear-gradient(135deg,#111827,#27356b 60%,#4f46e5)!important;box-shadow:0 7px 16px rgba(30,41,59,.14)}
+.um-save:hover:not(:disabled){box-shadow:0 10px 22px rgba(79,70,229,.18)}
+.um-deactivate:hover:not(:disabled){background:#fef2f2!important;border-color:#fda29b!important;box-shadow:0 8px 18px rgba(180,35,24,.08)}
+.um-action:disabled{opacity:.58;cursor:not-allowed}
+
+.user-management-notice{border-color:#e0e7ff!important;border-radius:15px!important;background:linear-gradient(135deg,#f8faff,#fff)!important;color:#3730a3;box-shadow:0 10px 28px rgba(79,70,229,.06)}
+.user-management-notice svg{color:#4f46e5}
+
+@media(max-width:700px){.user-management-header{padding:19px!important;align-items:stretch!important;flex-direction:column}.um-refresh-btn{width:100%;justify-content:center}.user-management-summary{grid-template-columns:1fr!important}.user-management-search{max-width:none!important}}
+@media(prefers-reduced-motion:reduce){.user-management-header,.user-management-stat,.user-management-toolbar,.user-management-table-card,.um-message{animation:none!important}.user-management-stat,.um-refresh-btn,.um-action,.um-select{transition:none!important}}

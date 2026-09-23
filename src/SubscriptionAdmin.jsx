@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
 import { supabase } from "./supabase";
+import "./SubscriptionAdmin.css";
 
 const money = (value) =>
   `Rs. ${Number(value || 0).toLocaleString("en-LK", {
@@ -86,7 +87,7 @@ export default function SubscriptionAdmin() {
   const pendingCount = payments.filter((p) => p.status === "PENDING").length;
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: 24 }}>
+    <div className="subscription-admin-page" style={{ maxWidth: 1200, margin: "0 auto", padding: 24 }}>
       <div
         style={{
           display: "flex",
