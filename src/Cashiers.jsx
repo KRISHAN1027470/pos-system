@@ -142,25 +142,34 @@ function Cashiers({ activeBranch, branchId: activeBranchId, branches: appBranche
     };
 
     if (editingId) {
-      const { error } = await supabase
-        .from("cashiers")
-        .update(payload)
-        .eq("id", editingId);
+      const { error } = await supabase.rpc("update_cashier", {
+        p_cashier_id: editingId,
+        p_name: form.name.trim(),
+        p_phone: form.phone.trim(),
+        p_email: form.email.trim(),
+        p_branch_id: form.branch_id,
+        p_status: form.status,
+      });
 
       if (error) {
-        console.error("Update cashier error:", error);
+        console.error("Update cashier RPC error:", error);
         alert(error.message);
         return;
       }
 
       alert("Cashier updated successfully.");
     } else {
-      const { error } = await supabase
-        .from("cashiers")
-        .insert([payload]);
+      const { error } = await supabase.rpc("create_cashier", {
+        p_cashier_code: form.cashier_code,
+        p_name: form.name.trim(),
+        p_phone: form.phone.trim(),
+        p_email: form.email.trim(),
+        p_branch_id: form.branch_id,
+        p_status: form.status,
+      });
 
       if (error) {
-        console.error("Save cashier error:", error);
+        console.error("Create cashier RPC error:", error);
         alert(error.message);
         return;
       }
@@ -205,13 +214,13 @@ function Cashiers({ activeBranch, branchId: activeBranchId, branches: appBranche
     );
     if (!confirmed) return;
 
-    const { error } = await supabase
-      .from("cashiers")
-      .delete()
-      .eq("id", cashier.id);
+    const { error } = await supabase.rpc("delete_cashier", {
+      p_cashier_id: cashier.id,
+      p_branch_id: currentBranchId,
+    });
 
     if (error) {
-      console.error("Delete cashier error:", error);
+      console.error("Delete cashier RPC error:", error);
       alert(
         error.code === "23503"
           ? "This cashier has sales history and cannot be deleted. Set the cashier to INACTIVE instead."
@@ -220,7 +229,8 @@ function Cashiers({ activeBranch, branchId: activeBranchId, branches: appBranche
       return;
     }
 
-    loadData();
+    alert("Cashier deleted successfully.");
+    await loadData();
   }
 
   const branchMap = Object.fromEntries(
