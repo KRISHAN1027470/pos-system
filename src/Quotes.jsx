@@ -211,7 +211,7 @@ function Quotes({
       supabase
         .from("app_settings")
         .select("*")
-        .order("created_at", { ascending: true })
+        .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
 
@@ -253,8 +253,28 @@ function Quotes({
       alert(branchResult.error.message);
       setBranches(appBranches || []);
     } else {
-      const activeBranches =
-        appBranches?.length ? appBranches : branchResult.data || [];
+      // Keep the full database branch record (address, phone, email, VAT, etc.)
+      // while preserving any extra fields supplied by the parent app.
+      const databaseBranches = branchResult.data || [];
+      const parentBranches = appBranches || [];
+
+      const activeBranches = databaseBranches.map((dbBranch) => {
+        const parentBranch = parentBranches.find(
+          (row) => row.id === dbBranch.id
+        );
+
+        return {
+          ...(parentBranch || {}),
+          ...dbBranch,
+        };
+      });
+
+      // Include any parent-only branch that is not present in the DB result.
+      parentBranches.forEach((parentBranch) => {
+        if (!activeBranches.some((row) => row.id === parentBranch.id)) {
+          activeBranches.push(parentBranch);
+        }
+      });
 
       setBranches(activeBranches);
 
@@ -345,6 +365,15 @@ function Quotes({
 
   const filteredItems = items.filter((item) => {
     const text = search.toLowerCase();
+
+    // Only show item records that actually belong to the currently
+    // selected branch through branch_stock. This prevents company-wide
+    // duplicate SKU records from appearing in the quotation item picker.
+    const belongsToSelectedBranch =
+      Boolean(branchId) &&
+      Object.prototype.hasOwnProperty.call(branchStock, item.id);
+
+    if (!belongsToSelectedBranch) return false;
 
     return (
       (item.name || "").toLowerCase().includes(text) ||
@@ -1090,7 +1119,10 @@ function Quotes({
     } else if (freshPrintSetting) {
       setDocumentPrintSettings((current) => ({
         ...current,
-        [quoteDocumentType]: freshPrintSetting,
+        [quoteDocumentType]: {
+          ...freshPrintSetting,
+          logo_url: freshPrintSetting.logo_url || settings.logo_url || "",
+        },
       }));
     }
 
@@ -1179,153 +1211,27 @@ function Quotes({
       return;
     }
 
-    const [invoiceResult, settingsResult] = await Promise.all([
-      supabase.from("invoices").select("*").eq("invoice_number", invoiceNumber).maybeSingle(),
-      supabase.from("app_settings").select("*").order("created_at", { ascending: true }).limit(1).maybeSingle(),
-    ]);
+    // Load the newly-created invoice only to resolve its UUID.
+    // The actual document is rendered by PublicInvoice, which is the same
+    // invoice structure used by normal POS sales/reprints.
+    const { data: invoice, error } = await supabase
+      .from("invoices")
+      .select("id, invoice_number")
+      .eq("invoice_number", invoiceNumber)
+      .maybeSingle();
 
-    if (invoiceResult.error) throw invoiceResult.error;
-    const invoice = invoiceResult.data;
-    if (!invoice) throw new Error(`Invoice ${invoiceNumber} was created but could not be loaded for printing.`);
-
-    const { data: invoiceLines, error: linesError } = await supabase
-      .from("invoice_items")
-      .select("*")
-      .eq("invoice_id", invoice.id)
-      .order("id", { ascending: true });
-    if (linesError) throw linesError;
-
-    const branch = branches.find((row) => row.id === invoice.branch_id);
-    const appSettings = settingsResult.data || {};
-    const invoiceDocumentType =
-      String(invoice.invoice_type || "").toUpperCase() === "VAT"
-        ? "TAX_INVOICE"
-        : "NON_VAT_INVOICE";
-
-    const { data: invoiceDocumentSettings, error: invoiceDocumentSettingsError } =
-      await supabase
-        .from("document_print_settings")
-        .select("*")
-        .eq("document_type", invoiceDocumentType)
-        .maybeSingle();
-
-    if (invoiceDocumentSettingsError) {
-      console.error("Invoice document settings load error:", invoiceDocumentSettingsError);
+    if (error) throw error;
+    if (!invoice?.id) {
+      throw new Error(`Invoice ${invoiceNumber} was created but could not be loaded for printing.`);
     }
 
-    const settings = {
-      ...appSettings,
-      ...(invoiceDocumentSettings || {}),
-    };
-    const currency = settings.currency_symbol || appSettings.currency_symbol || "Rs.";
+    const publicInvoiceUrl =
+      `${window.location.origin}/invoice/${encodeURIComponent(invoice.id)}?print=1`;
 
-    const escapeHtml = (value) => String(value ?? "")
-      .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;").replaceAll("'", "&#039;");
-    const money = (value) => Number(value || 0).toLocaleString("en-LK", {
-      minimumFractionDigits: 2, maximumFractionDigits: 2,
-    });
-    const date = (value) => value ? new Date(value).toLocaleString("en-LK") : "-";
-
-    const branchLabel = branch
-      ? `${branch.branch_code || ""}${branch.branch_code ? " - " : ""}${branch.branch_name || ""}`
-      : "-";
-    const businessName = branch?.branch_name || settings.company_name || "LE ELECTRICS";
-    const customerName = invoice.customer_name || selectedQuote?.customer_name || "Walk-in Customer";
-    const invoiceCashier = cashiers.find((row) => row.id === invoice.cashier_id);
-    const cashierName = invoiceCashier?.name || invoiceCashier?.cashier_code || getCashierName(selectedQuote?.cashier_id) || "-";
-    const paymentMethod = invoice.payment_method || (Number(invoice.due_amount || 0) > 0 ? "Credit" : "CASH");
-    const logo = settings.logo_url
-      ? `<img src="${escapeHtml(settings.logo_url)}" alt="Logo" class="logo">`
-      : "";
-
-    // Match the normal POS/Invoices print header:
-    // prefer the invoice branch details, then fall back to company settings.
-    const invoiceAddress =
-      branch?.address ||
-      settings.company_address ||
-      "No: 120, First Cross Street, Colombo - 11";
-
-    const invoicePhone =
-      branch?.phone ||
-      settings.company_phone ||
-      "077 305 6626 / 011 243 0137";
-
-    const invoiceEmail =
-      branch?.email ||
-      settings.company_email ||
-      "";
-
-    const showAddress =
-      settings.show_address !== false &&
-      settings.receipt_show_branch_address !== false;
-
-    const showTelephone =
-      settings.show_telephone !== false &&
-      settings.receipt_show_branch_phone !== false;
-
-    const businessDetails = [
-      invoiceAddress || "",
-      (invoicePhone || invoiceEmail)
-        ? [invoicePhone, invoiceEmail].filter(Boolean).join(" • ")
-        : "",
-    ]
-      .filter(Boolean)
-      .map((v) => `<div>${escapeHtml(v)}</div>`)
-      .join("");
-
-    const rows = (invoiceLines || []).map((line) => {
-      const qty = Number(line.quantity || 0);
-      const unitPrice = Number(line.unit_price ?? line.selling_price ?? 0);
-      const lineTotal = Number(line.line_total ?? line.total ?? qty * unitPrice);
-      return `<tr>
-        <td><strong>${escapeHtml(line.item_name || line.name || "Item")}</strong>${line.sku ? `<small>${escapeHtml(line.sku)}</small>` : ""}</td>
-        <td class="right">${escapeHtml(qty)}</td>
-        <td class="right">${escapeHtml(currency)} ${money(unitPrice)}</td>
-        <td class="right bold">${escapeHtml(currency)} ${money(lineTotal)}</td>
-      </tr>`;
-    }).join("");
-
-    const subtotal = Number(invoice.subtotal ?? invoice.sub_total ?? invoice.total ?? 0);
-    const discount = Number(invoice.discount ?? invoice.discount_amount ?? 0);
-    const vat = Number(invoice.vat_amount ?? invoice.tax_amount ?? 0);
-    const total = Number(invoice.total ?? invoice.total_amount ?? selectedQuote?.total ?? 0);
-    const paid = Number(invoice.paid_amount ?? 0);
-    const due = Number(invoice.due_amount ?? Math.max(total - paid, 0));
-    const isVat = String(invoice.invoice_type || selectedQuote?.quote_type || "").toUpperCase() === "VAT";
-
-    const standardHtml = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(invoiceNumber)}</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;color:#0f172a;font-family:Arial,sans-serif;font-size:12px}.sheet{width:100%;padding:14px}.topline{border-top:1px solid #dbe3ee;margin-bottom:16px}.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #cbd5e1;padding-bottom:14px}.logo{max-width:90px;max-height:42px;object-fit:contain;display:block;margin-bottom:10px}.business h1{font-size:17px;margin:0 0 3px;font-weight:800}.business div{font-size:12px;line-height:1.45}.doc{text-align:right}.doc h2{font-size:18px;margin:0;font-weight:900}.doc .number{font-size:13px;font-weight:900;margin-top:3px}.doc .status{font-size:10px;font-weight:900;margin-top:5px}.info{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0 16px}.box{border:1px solid #dbe3ee;border-radius:5px;padding:7px 9px;min-height:45px}.box span{display:block;color:#94a3b8;font-size:10px;font-weight:800;text-transform:uppercase;margin-bottom:3px}.box strong{font-size:11px}table{width:100%;border-collapse:collapse}th{background:#f8fafc;border-top:1px solid #cbd5e1;border-bottom:1px solid #cbd5e1;padding:6px;text-align:left;color:#475569;font-size:10px;text-transform:uppercase}td{border-bottom:1px solid #e2e8f0;padding:7px 6px;vertical-align:top;font-size:11px}td small{display:block;color:#64748b;font-size:9px;margin-top:1px}.right{text-align:right}.bold{font-weight:800}.summary{width:42%;min-width:240px;margin:12px 0 0 auto}.summary-row{display:flex;justify-content:space-between;gap:15px;border-bottom:1px solid #e2e8f0;padding:5px 0}.summary-row span{color:#64748b}.summary-row strong{white-space:nowrap}.footer{border-top:1px solid #dbe3ee;margin-top:16px;padding-top:10px;text-align:center;color:#94a3b8;font-size:9px}@media print{html,body{width:100%;margin:0!important;padding:0!important}.sheet{padding:0}.topline{margin-bottom:14px}}
-</style></head><body><div class="sheet"><div class="topline"></div>
-<div class="header"><div class="business">${logo}<h1>${escapeHtml(businessName)}</h1>${businessDetails}</div><div class="doc"><h2>${isVat ? "VAT INVOICE" : "INVOICE"}</h2><div class="number">${escapeHtml(invoiceNumber)}</div><div class="status">${escapeHtml(invoice.status || "COMPLETED")}</div></div></div>
-<div class="info"><div class="box"><span>Date</span><strong>${escapeHtml(date(invoice.invoice_date || invoice.created_at))}</strong></div><div class="box"><span>Branch</span><strong>${escapeHtml(branchLabel)}</strong></div><div class="box"><span>Customer</span><strong>${escapeHtml(customerName)}</strong></div><div class="box"><span>Cashier</span><strong>${escapeHtml(cashierName)}</strong></div><div class="box"><span>Payment</span><strong>${escapeHtml(paymentMethod)}</strong></div></div>
-<table><thead><tr><th>Item</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${rows}</tbody></table>
-<div class="summary"><div class="summary-row"><span>Subtotal</span><strong>${escapeHtml(currency)} ${money(subtotal)}</strong></div>${discount > 0 ? `<div class="summary-row"><span>Discount</span><strong>${escapeHtml(currency)} ${money(discount)}</strong></div>` : ""}${isVat ? `<div class="summary-row"><span>VAT</span><strong>${escapeHtml(currency)} ${money(vat)}</strong></div>` : ""}<div class="summary-row"><span>Invoice Total</span><strong>${escapeHtml(currency)} ${money(total)}</strong></div><div class="summary-row"><span>Paid</span><strong>${escapeHtml(currency)} ${money(paid)}</strong></div><div class="summary-row"><span>Due</span><strong>${escapeHtml(currency)} ${money(due)}</strong></div></div>
-${settings.show_footer !== false && String(settings.footer_text || "").trim() ? `<div class="footer" style="font-size:${Number(settings.footer_font_size || 9)}px;white-space:pre-wrap">${escapeHtml(settings.footer_text)}</div>` : ""}</div></body></html>`;
-
-    const html = isVat
-      ? buildTaxInvoiceHtml({ invoice, invoiceLines, branch, settings, cashierName, customerName, paymentMethod, currency, money, escapeHtml })
-      : standardHtml;
-
-    const frame = document.createElement("iframe");
-    frame.setAttribute("aria-hidden", "true");
-    frame.style.position = "fixed";
-    frame.style.left = "-10000px";
-    frame.style.top = "0";
-    frame.style.width = "800px";
-    frame.style.height = "1100px";
-    frame.style.border = "0";
-    document.body.appendChild(frame);
-
-    const doc = frame.contentDocument || frame.contentWindow?.document;
-    if (!doc) { frame.remove(); throw new Error("Unable to prepare invoice print preview."); }
-    doc.open(); doc.write(html); doc.close();
-
-    await new Promise((resolve) => setTimeout(resolve, settings.logo_url ? 700 : 250));
-    frame.contentWindow?.focus();
-    frame.contentWindow?.print();
-    setTimeout(() => frame.remove(), 2500);
+    const printWindow = window.open(publicInvoiceUrl, "_blank");
+    if (!printWindow) {
+      throw new Error("The invoice print window was blocked. Please allow pop-ups and try again.");
+    }
   }
 
   async function convertQuoteToInvoice() {
@@ -1483,9 +1389,92 @@ Stock will be checked and reduced after conversion.`
   }
 
   function printQuote() {
-    // Keep the existing Non-VAT quotation print behavior unchanged.
+    // NON-VAT quotation: open a dedicated A4 print preview containing only
+    // the quotation document (not the modal/application UI).
     if (selectedQuote?.quote_type !== "VAT") {
-      window.print();
+      const sheet = document.querySelector(".print-quote");
+      if (!sheet) {
+        alert("Quotation preview is not ready.");
+        return;
+      }
+
+      const printWindow = window.open("", "_blank", "width=900,height=1000");
+      if (!printWindow) {
+        alert("Please allow pop-ups to print the quotation.");
+        return;
+      }
+
+      const printCss = `
+        @page { size: A4 portrait; margin: 12mm; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        html, body { margin:0; padding:0; width:100%; background:#fff; color:#0f172a; font-family:Arial,sans-serif; }
+        .print-quote { display:block !important; width:100% !important; max-width:none !important; margin:0 !important; padding:0 !important; background:#fff !important; }
+        .quote-print-header { display:flex; justify-content:space-between; align-items:flex-start; gap:24px; padding-bottom:14px; border-bottom:1px solid #cbd5e1; }
+        .quote-print-header h1 { margin:0 0 4px; font-size:22px; font-weight:800; }
+        .quote-print-header p { margin:0; color:#64748b; font-size:12px; }
+        .quote-company-contact { display:block !important; margin:4px 0 5px !important; font-size:11px !important; line-height:1.45 !important; color:#334155 !important; }
+        .quote-company-contact div { display:block !important; margin:1px 0 !important; }
+        .quote-company-contact {
+  display: block;
+  margin: 4px 0 5px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #334155;
+}
+.quote-company-contact div {
+  display: block;
+  margin: 1px 0;
+}
+.quote-print-logo {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 110px;
+  max-height: 55px;
+  object-fit: contain;
+  margin: 0 0 8px 0;
+}
+        .quote-business-detail { margin:2px 0 !important; color:#334155 !important; font-size:11px !important; line-height:1.35; }
+        .quote-document-subtitle { margin-top:6px !important; color:#64748b !important; }
+        .quote-print-logo { display:block !important; width:90px !important; height:45px !important; max-width:90px !important; max-height:45px !important; object-fit:contain !important; object-position:left center !important; margin:0 0 8px !important; }
+        .quote-business-detail { margin:2px 0 !important; color:#334155 !important; line-height:1.35; }
+        .quote-document-subtitle { margin-top:6px !important; color:#64748b !important; }
+        .quote-print-header > div:last-child { text-align:right; }
+        .quote-print-header h2 { margin:0 0 5px; font-size:20px; font-weight:900; }
+        .quote-print-header strong { font-size:13px; }
+        .quote-print-info { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:14px 0 16px; }
+        .quote-print-info > div { border:1px solid #dbe3ee; border-radius:5px; padding:8px 10px; min-height:48px; }
+        .quote-print-info span { display:block; color:#64748b; font-size:10px; font-weight:800; text-transform:uppercase; margin-bottom:4px; }
+        .quote-print-info strong { font-size:12px; }
+        .quote-print-table { width:100%; border-collapse:collapse; margin-top:8px; font-size:11px; }
+        .quote-print-table th { background:#f8fafc; color:#475569; font-size:10px; text-transform:uppercase; text-align:left; border-top:1px solid #cbd5e1; border-bottom:1px solid #cbd5e1; padding:7px 6px; }
+        .quote-print-table td { border-bottom:1px solid #e2e8f0; padding:8px 6px; vertical-align:top; }
+        .quote-print-table th:nth-child(n+4), .quote-print-table td:nth-child(n+4) { text-align:right; }
+        .quote-print-summary { width:42%; min-width:250px; margin:14px 0 0 auto; }
+        .quote-print-summary > div { display:flex; justify-content:space-between; gap:18px; padding:6px 0; border-bottom:1px solid #e2e8f0; font-size:11px; }
+        .quote-print-summary span { color:#64748b; }
+        .quote-print-summary strong { white-space:nowrap; }
+        .quote-print-summary .quote-print-total { font-size:13px; font-weight:900; border-top:1px solid #94a3b8; border-bottom:0; margin-top:3px; padding-top:8px; }
+        .quote-print-notes { margin-top:18px; padding:10px; border:1px solid #e2e8f0; border-radius:5px; font-size:11px; }
+        .quote-print-notes p { margin:5px 0 0; white-space:pre-wrap; }
+        .quote-dynamic-footer { color:#64748b; }
+        button, .no-print, .quote-management-panel, .quote-modal-header { display:none !important; }
+      `;
+
+      printWindow.document.open();
+      printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${selectedQuote?.quote_number || "Quotation"}</title><style>${printCss}</style></head><body>${sheet.outerHTML}</body></html>`);
+      printWindow.document.close();
+
+      const waitForImages = async () => {
+        const images = Array.from(printWindow.document.images);
+        await Promise.all(images.map((img) => img.complete ? Promise.resolve() : new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; })));
+      };
+
+      setTimeout(async () => {
+        await waitForImages();
+        printWindow.focus();
+        printWindow.print();
+      }, 350);
       return;
     }
 
@@ -2935,25 +2924,85 @@ Stock will be checked and reduced after conversion.`
                 />
               ) : (
                 <>
-              <div className="quote-print-header">
-                <div>
-                  <h1>{getQuoteBranchName(selectedQuote)}</h1>
-                  <p>Sales Quotation</p>
-                </div>
+              {(() => {
+                const nonVatSettings = {
+                  ...settings,
+                  ...(documentPrintSettings.NON_VAT_QUOTATION || {}),
+                };
+                const quoteBranch = getQuoteBranch(selectedQuote);
+                const businessName =
+                  quoteBranch?.branch_name ||
+                  nonVatSettings.company_name ||
+                  "LE ELECTRICS";
+                // For a quotation, the selected quotation branch is the
+                // primary source for the printed business contact details.
+                // Fall back to Settings only when the branch field is empty.
+                const businessAddress =
+                  quoteBranch?.address ||
+                  nonVatSettings.company_address ||
+                  settings.company_address ||
+                  "";
+                const businessPhone =
+                  quoteBranch?.phone ||
+                  nonVatSettings.company_phone ||
+                  settings.company_phone ||
+                  "";
+                const businessEmail =
+                  quoteBranch?.email ||
+                  nonVatSettings.company_email ||
+                  settings.company_email ||
+                  "";
+                const businessLogo =
+                  nonVatSettings.logo_url ||
+                  settings.logo_url ||
+                  "";
 
-                <div>
-                  <h2>
-                    {selectedQuote.quote_type ===
-                    "VAT"
-                      ? "VAT QUOTATION"
-                      : "QUOTATION"}
-                  </h2>
+                return (
+                  <div className="quote-print-header">
+                    <div className="quote-business">
+                      {nonVatSettings.show_logo !== false &&
+                      businessLogo ? (
+                        <img
+                          className="quote-print-logo"
+                          src={businessLogo}
+                          alt="Company Logo"
+                          style={{
+                            display: "block",
+                            width: "90px",
+                            height: "45px",
+                            maxWidth: "90px",
+                            maxHeight: "45px",
+                            objectFit: "contain",
+                            objectPosition: "left center",
+                            marginBottom: "8px",
+                          }}
+                        />
+                      ) : null}
 
-                  <strong>
-                    {selectedQuote.quote_number}
-                  </strong>
-                </div>
-              </div>
+                      <h1>{businessName}</h1>
+
+                      <div className="quote-company-contact">
+                        {businessAddress ? (
+                          <div>{businessAddress}</div>
+                        ) : null}
+                        {businessPhone ? (
+                          <div>Tel: {businessPhone}</div>
+                        ) : null}
+                        {businessEmail ? (
+                          <div>Email: {businessEmail}</div>
+                        ) : null}
+                      </div>
+
+                      <p className="quote-document-subtitle">Sales Quotation</p>
+                    </div>
+
+                    <div>
+                      <h2>QUOTATION</h2>
+                      <strong>{selectedQuote.quote_number}</strong>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="quote-print-info">
                 <div>
@@ -3262,14 +3311,28 @@ function numberToWordsTax(value){
   const u=(x)=>{let a=[];if(x>=100){a.push(ones[Math.floor(x/100)]+" Hundred");x%=100;}if(x>=20){a.push(tens[Math.floor(x/10)]);if(x%10)a.push(ones[x%10]);}else if(x>0)a.push(ones[x]);return a.join(" ");};let x=n,p=[];for(const [v,name] of [[10000000,"Crore"],[100000,"Lakh"],[1000,"Thousand"]]){if(x>=v){p.push(u(Math.floor(x/v))+" "+name);x%=v;}}if(x)p.push(u(x));return p.join(" ");
 }
 
-function buildTaxInvoiceHtml({ invoice, invoiceLines, branch, settings, cashierName, customerName, paymentMethod, currency, money, escapeHtml }) {
+function buildTaxInvoiceHtml({ invoice, invoiceLines, branch, settings, cashierName, customerName, customer, paymentMethod, currency, money, escapeHtml }) {
   const total=Number(invoice.total||0),vat=Number(invoice.vat_amount||0),supply=Number(invoice.taxable_amount ?? (total-vat));
   const vatRate=(invoiceLines||[]).find(x=>Number(x.vat_rate||0)>0)?.vat_rate||18;
   const supplierTin=settings?.tin||settings?.tin_number||settings?.vat_number||"103441161";
   const supplierName = branch?.branch_name || settings?.company_name || "Lanka Electrics";
   const supplierAddress=settings?.company_address||branch?.address||"No: 120, First Cross Street, Colombo - 11";
   const supplierPhone=settings?.company_phone||branch?.phone||"077 305 6626 / 011 243 0137";
-  const purchaserTin=invoice.customer_vat_number||invoice.customer_tin||"-", purchaserAddress=invoice.customer_address||"-", purchaserPhone=invoice.customer_phone||"-";
+  const purchaserTin =
+    invoice.customer_vat_number ||
+    invoice.customer_tin ||
+    customer?.vat_number ||
+    customer?.tin ||
+    "-";
+  const purchaserAddress =
+    invoice.customer_address ||
+    customer?.address ||
+    customer?.billing_address ||
+    "-";
+  const purchaserPhone =
+    invoice.customer_phone ||
+    customer?.phone ||
+    "-";
   const rows=(invoiceLines||[]).map((line,i)=>{const q=Number(line.quantity||0),u=Number(line.unit_price||0),d=Number(line.discount||0),ex=Math.max(q*u-d,0);return `<tr><td>${String(i+1).padStart(2,"0")}</td><td>${escapeHtml(line.item_name||"Item")}${line.sku?`<small>${escapeHtml(line.sku)}</small>`:""}</td><td class="c">${q}</td><td class="r">${escapeHtml(currency)} ${money(u)}</td><td class="r">${escapeHtml(currency)} ${money(ex)}</td></tr>`}).join("");
   const dt=new Date(invoice.invoice_date||invoice.created_at).toLocaleDateString("en-GB");
   return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(invoice.invoice_number)}</title><style>*{box-sizing:border-box}html,body{margin:0;background:#fff;color:#000;font-family:Arial,sans-serif;font-size:15px}.sheet{width:210mm;padding:10mm 7mm;position:relative}.logo{text-align:right;height:46px;padding-right:8px}.logo img{max-width:95px;max-height:44px;object-fit:contain}.mark{font-weight:900;letter-spacing:4px;padding:1px 3px;font-size:12px}.title{width:145px;margin:0 auto 12px;border:2px solid #222;text-align:center;font-size:21px;font-weight:800;padding:10px 6px}.grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #222;border-left:1px solid #222;font-size:15px}.grid>div{border-right:1px solid #222;border-bottom:1px solid #222;padding:9px 11px;min-height:36px;font-size:15px}.party{min-height:135px;line-height:1.8;padding-top:9px}.wide{grid-column:1/-1;min-height:38px}table{width:100%;border-collapse:collapse;margin-top:12px;font-size:15px}th,td{border:1px solid #222;padding:8px 6px;font-size:15px}th{text-align:center;background:#f3f3f3}th:nth-child(2){width:44%}small{display:block;font-size:13px}.c{text-align:center}.r{text-align:right}.sum td:first-child{text-align:right;font-weight:700}.total td{font-weight:900}@media print{@page{size:A4;margin:0}.sheet{padding:10mm 7mm}}</style></head><body><div class="sheet"><div class="logo">${settings?.show_logo !== false && settings?.logo_url ? `<img src="${escapeHtml(settings.logo_url)}" alt="Logo">` : ""}</div><div class="title">Tax Invoice</div><div class="grid"><div><b>Date of Invoice:</b> ${dt}</div><div><b>Tax Invoice No.:</b> ${escapeHtml(invoice.invoice_number)}</div><div class="party"><div><b>Supplier's TIN:</b> ${escapeHtml(supplierTin)}</div><div><b>Supplier's Name:</b> ${escapeHtml(supplierName)}</div><div><b>Address:</b> ${escapeHtml(supplierAddress)}</div><div><b>Telephone No:</b> ${escapeHtml(supplierPhone)}</div></div><div class="party"><div><b>Purchaser's TIN:</b> ${escapeHtml(purchaserTin)}</div><div><b>Purchaser's Name:</b> ${escapeHtml(customerName)}</div><div><b>Address:</b> ${escapeHtml(purchaserAddress)}</div><div><b>Telephone No:</b> ${escapeHtml(purchaserPhone)}</div></div><div><b>Date of Delivery:</b> ${dt}</div><div><b>Place of Supply:</b> ${escapeHtml(branch?.branch_name||branch?.address||"-")}</div></div><table><thead><tr><th>Reference</th><th>Description of Goods or Services</th><th>Quantity</th><th>Unit Price</th><th>Amount<br>Excluding VAT<br>(${escapeHtml(currency)})</th></tr></thead><tbody>${rows}<tr class="sum"><td colspan="4">Total Value of Supply:</td><td class="r">${escapeHtml(currency)} ${money(supply)}</td></tr><tr class="sum"><td colspan="4">VAT Amount (Total Value of Supply @ ${vatRate}%):</td><td class="r">${escapeHtml(currency)} ${money(vat)}</td></tr><tr class="sum total"><td colspan="4">Total Amount including VAT:</td><td class="r">${escapeHtml(currency)} ${money(total)}</td></tr></tbody></table>${settings?.show_footer !== false && String(settings?.footer_text || "").trim() ? `<div style="margin-top:18px;padding-top:10px;border-top:1px solid #222;text-align:center;white-space:pre-wrap;font-size:${Number(settings?.footer_font_size || 9)}px">${escapeHtml(settings.footer_text)}</div>` : ""}</div></body></html>`;

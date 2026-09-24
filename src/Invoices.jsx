@@ -27,6 +27,10 @@ function Invoices({
   const [payments, setPayments] = useState([]);
   const [branches, setBranches] = useState([]);
   const [settings, setSettings] = useState(null);
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [selectedInvoiceSettings, setSelectedInvoiceSettings] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedDocumentPrintSettings, setSelectedDocumentPrintSettings] = useState(null);
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL");
@@ -93,12 +97,24 @@ function Invoices({
         .select("*")
         .order("branch_name", { ascending: true }),
 
-      supabase
-        .from("app_settings")
-        .select("*")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle(),
+      (() => {
+        const activeCompanyId =
+          activeBranch?.company_id ||
+          appBranches.find((branch) => branch.id === activeBranchId)?.company_id ||
+          null;
+
+        let query = supabase
+          .from("app_settings")
+          .select("*")
+          .order("created_at", { ascending: true })
+          .limit(1);
+
+        if (activeCompanyId) {
+          query = query.eq("company_id", activeCompanyId);
+        }
+
+        return query.maybeSingle();
+      })(),
     ]);
 
     if (invoiceResult.error) {
@@ -113,7 +129,23 @@ function Invoices({
       console.error("Load branches error:", branchResult.error);
       setBranches(appBranches || []);
     } else {
-      setBranches(appBranches?.length ? appBranches : branchResult.data || []);
+      // Use the full database branch rows for invoice/reprint details (VAT,
+      // address, phone, email), while preserving any extra app-level fields.
+      const dbBranches = branchResult.data || [];
+      const appBranchMap = new Map((appBranches || []).map((branch) => [branch.id, branch]));
+      const mergedBranches = dbBranches.map((branch) => ({
+        ...(appBranchMap.get(branch.id) || {}),
+        ...branch,
+      }));
+
+      // Keep any app branch that was not returned by the query.
+      (appBranches || []).forEach((branch) => {
+        if (!mergedBranches.some((row) => row.id === branch.id)) {
+          mergedBranches.push(branch);
+        }
+      });
+
+      setBranches(mergedBranches);
     }
 
     if (settingsResult.error) {
@@ -155,8 +187,12 @@ function Invoices({
     setDetailsLoading(true);
     setInvoiceItems([]);
     setPayments([]);
+    setSelectedCompany(null);
+    setSelectedInvoiceSettings(null);
+    setSelectedCustomer(null);
+    setSelectedDocumentPrintSettings(null);
 
-    const [itemResult, paymentResult] = await Promise.all([
+    const [itemResult, paymentResult, companyResult, invoiceSettingsResult, customerResult, documentPrintResult] = await Promise.all([
       supabase
         .from("invoice_items")
         .select("*")
@@ -168,6 +204,46 @@ function Invoices({
         .select("*")
         .eq("invoice_id", invoice.id)
         .order("payment_date", { ascending: true }),
+
+      invoice.company_id
+        ? supabase
+            .from("companies")
+            .select("*")
+            .eq("id", invoice.company_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+
+      invoice.company_id
+        ? supabase
+            .from("app_settings")
+            .select("*")
+            .eq("company_id", invoice.company_id)
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+
+      invoice.customer_id
+        ? supabase
+            .from("customers")
+            .select("*")
+            .eq("id", invoice.customer_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+
+      invoice.company_id
+        ? supabase
+            .from("document_print_settings")
+            .select("*")
+            .eq("company_id", invoice.company_id)
+            .eq(
+              "document_type",
+              String(invoice.invoice_type || "").toUpperCase() === "VAT"
+                ? "TAX_INVOICE"
+                : "NON_VAT_INVOICE"
+            )
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
     if (itemResult.error) {
@@ -183,6 +259,34 @@ function Invoices({
       setPayments(paymentResult.data || []);
     }
 
+    if (companyResult?.error) {
+      console.error("Load invoice company error:", companyResult.error);
+      setSelectedCompany(null);
+    } else {
+      setSelectedCompany(companyResult?.data || null);
+    }
+
+    if (invoiceSettingsResult?.error) {
+      console.error("Load invoice settings error:", invoiceSettingsResult.error);
+      setSelectedInvoiceSettings(null);
+    } else {
+      setSelectedInvoiceSettings(invoiceSettingsResult?.data || null);
+    }
+
+    if (customerResult?.error) {
+      console.error("Load invoice customer error:", customerResult.error);
+      setSelectedCustomer(null);
+    } else {
+      setSelectedCustomer(customerResult?.data || null);
+    }
+
+    if (documentPrintResult?.error) {
+      console.error("Load document print settings error:", documentPrintResult.error);
+      setSelectedDocumentPrintSettings(null);
+    } else {
+      setSelectedDocumentPrintSettings(documentPrintResult?.data || null);
+    }
+
     setDetailsLoading(false);
   }
 
@@ -190,6 +294,10 @@ function Invoices({
     setSelectedInvoice(null);
     setInvoiceItems([]);
     setPayments([]);
+    setSelectedCompany(null);
+    setSelectedInvoiceSettings(null);
+    setSelectedCustomer(null);
+    setSelectedDocumentPrintSettings(null);
   }
 
   const branchMap = useMemo(() => {
@@ -923,28 +1031,334 @@ function Invoices({
   }
 
   function printInvoice() {
-    window.print();
+    const isVat =
+      String(selectedInvoice?.invoice_type || "").toUpperCase() === "VAT";
+
+    // NON-VAT reprint: open the SAME PublicInvoice route used by POS.
+    // Do this before creating the VAT print window; otherwise Chrome leaves
+    // the first about:blank window open and can block the second popup.
+    if (!isVat && selectedInvoice?.id) {
+      const publicInvoiceUrl =
+        `${window.location.origin}/invoice/${encodeURIComponent(selectedInvoice.id)}?print=1`;
+      window.open(publicInvoiceUrl, "_blank");
+      return;
+    }
+
+    // VAT invoices continue to use the existing Tax Invoice print template.
+    const invoiceNode = document.getElementById("print-invoice");
+
+    if (!invoiceNode) {
+      window.print();
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=1000,height=900");
+
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const escapePrintHtml = (value) =>
+      String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    const nonVatItemRows = invoiceItems
+      .map(
+        (item) => `
+          <tr>
+            <td>
+              <strong>${escapePrintHtml(item.item_name)}</strong>
+              ${item.sku ? `<span class="item-sku">${escapePrintHtml(item.sku)}</span>` : ""}
+            </td>
+            <td class="right">${escapePrintHtml(item.quantity)}</td>
+            <td class="right">${escapePrintHtml(currency)} ${formatMoney(item.unit_price)}</td>
+            <td class="right strong">${escapePrintHtml(currency)} ${formatMoney(item.line_total)}</td>
+          </tr>`
+      )
+      .join("");
+
+    const branchPrintName = selectedBranch?.branch_name || "Branch";
+    const branchPrintCode = selectedBranch?.branch_code || "";
+    const isCash = String(selectedInvoice?.payment_method || "").toUpperCase() === "CASH";
+    const receivedAmount = selectedInvoice?.received_amount ?? selectedInvoice?.amount_paid ?? selectedInvoice?.paid_amount ?? 0;
+    const changeAmount = selectedInvoice?.change_amount ?? selectedInvoice?.balance ?? 0;
+
+    // Keep the reprint structure identical to the direct POS cash-sale invoice.
+    const normalPrintHtml = `
+      <main class="normal-page">
+        <section class="normal-header">
+          <div class="normal-business">
+            <h1>${escapePrintHtml(branchPrintName)}</h1>
+            ${invoiceAddress ? `<p>${escapePrintHtml(invoiceAddress)}</p>` : ""}
+            ${invoicePhone ? `<p>Tel: ${escapePrintHtml(invoicePhone)}</p>` : ""}
+            ${invoiceEmail ? `<p>Email: ${escapePrintHtml(invoiceEmail)}</p>` : ""}
+          </div>
+          <div class="normal-title">
+            <h2>INVOICE</h2>
+            <div class="invoice-no">${escapePrintHtml(selectedInvoice?.invoice_number || "")}</div>
+            <div class="status">${escapePrintHtml(selectedInvoice?.status || paymentStatus(selectedInvoice))}</div>
+          </div>
+        </section>
+
+        <section class="normal-info">
+          <div><span>Date</span><strong>${escapePrintHtml(formatDate(selectedInvoice?.invoice_date))}</strong></div>
+          <div><span>Branch</span><strong>${escapePrintHtml([branchPrintCode, branchPrintName].filter(Boolean).join(" - "))}</strong></div>
+          <div><span>Customer</span><strong>${escapePrintHtml(selectedInvoice?.customer_name || "Walk-in Customer")}</strong></div>
+          <div><span>Cashier</span><strong>${escapePrintHtml(selectedInvoice?.cashier_name || "-")}</strong></div>
+          <div><span>Payment</span><strong>${escapePrintHtml(selectedInvoice?.payment_method || "Credit")}</strong></div>
+        </section>
+
+        <table class="normal-items">
+          <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+          <tbody>${nonVatItemRows}</tbody>
+        </table>
+
+        <section class="totals">
+          <div><span>Subtotal</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice?.subtotal)}</strong></div>
+          ${Number(selectedInvoice?.discount || 0) > 0 ? `<div><span>Discount</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice.discount)}</strong></div>` : ""}
+          <div class="grand"><span>Invoice Total</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice?.total)}</strong></div>
+          ${isCash ? `<div><span>Received Amount</span><strong>${escapePrintHtml(currency)} ${formatMoney(receivedAmount)}</strong></div>` : ""}
+          <div><span>Paid</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice?.paid_amount)}</strong></div>
+          ${isCash && Number(changeAmount) > 0 ? `<div><span>Change</span><strong>${escapePrintHtml(currency)} ${formatMoney(changeAmount)}</strong></div>` : ""}
+          <div><span>Due</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice?.due_amount)}</strong></div>
+        </section>
+        ${receiptFooter ? `<footer>${escapePrintHtml(receiptFooter)}</footer>` : ""}
+      </main>`;
+
+    // Important: do not copy Invoices.css into the isolated print window.
+    // The app stylesheet contains print rules for the full-screen modal and
+    // those rules can make Chrome calculate an extra blank sheet.
+    const vatCss = `
+      @page { size: auto; margin: 8mm; }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+        color: #000 !important;
+        font-family: Arial, sans-serif !important;
+      }
+      #print-invoice, .reprint-tax-doc {
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+        break-before: auto !important;
+        break-after: auto !important;
+        page-break-before: auto !important;
+        page-break-after: auto !important;
+      }
+      .reprint-tax-title {
+        width: 200px;
+        margin: 8px auto 12px !important;
+        border: 1px solid #000;
+        text-align: center;
+        font-size: 21px;
+        font-weight: 800;
+        padding: 10px 6px;
+        white-space: nowrap;
+      }
+      .reprint-tax-party-grid {
+        display: grid;
+        grid-template-columns: 50% 50%;
+        width: 100%;
+        border: 1px solid #000;
+        font-size: 15px;
+      }
+      .reprint-tax-cell {
+        margin: 0 !important;
+        border: 0 !important;
+        padding: 7px 11px;
+        min-height: 32px;
+      }
+      .reprint-tax-cell:nth-child(odd) {
+        border-right: 1px solid #000 !important;
+      }
+      .reprint-tax-cell:nth-child(-n+4) {
+        border-bottom: 1px solid #000 !important;
+      }
+      .reprint-tax-party {
+        line-height: 1.9;
+        min-height: 105px;
+        padding-top: 8px;
+      }
+      .reprint-tax-items {
+        width: 100%;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        table-layout: fixed;
+        margin-top: 12px;
+        font-size: 11px;
+        border: 1px solid #000 !important;
+      }
+      .reprint-tax-items th, .reprint-tax-items td {
+        border: 1px solid #000 !important;
+        padding: 7px 5px;
+        vertical-align: middle;
+      }
+      .reprint-tax-items th {
+        text-align: center;
+        background: #f3f3f3;
+        font-weight: 800;
+        font-size: 11px;
+      }
+      .reprint-tax-items th:nth-child(1) { width: 12%; }
+      .reprint-tax-items th:nth-child(2) { width: 44%; }
+      .reprint-tax-items th:nth-child(3) { width: 12%; }
+      .reprint-tax-items th:nth-child(4) { width: 14%; }
+      .reprint-tax-items th:nth-child(5) { width: 18%; }
+      .reprint-tax-items small {
+        display: block;
+        font-size: 9px;
+        margin-top: 2px;
+      }
+      .reprint-tax-center { text-align: center; }
+      .reprint-tax-right { text-align: right; }
+      .reprint-tax-total-row td:first-child {
+        text-align: right;
+        font-weight: 700;
+      }
+      .reprint-tax-strong td { font-weight: 900; }
+      .reprint-tax-meta {
+        margin-top: 10px;
+        border: 1px solid #000;
+        padding: 8px 10px;
+        font-size: 9px;
+        line-height: 1.7;
+      }
+      .reprint-tax-footer {
+        text-align: center;
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid #000;
+        font-size: 9px;
+        white-space: pre-wrap;
+      }
+      .cancelled-watermark {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) rotate(-24deg);
+        font-size: 90px;
+        font-weight: 900;
+        color: rgba(220,38,38,.12);
+      }
+      .no-print { display: none !important; }
+      table, tr, td, th {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+    `;
+
+    const normalCss = `
+      @page { size: A4 portrait; margin: 10mm; }
+      * { box-sizing: border-box; }
+      html, body { margin:0 !important; padding:0 !important; background:#fff !important; color:#0f172a; font-family:Inter,Arial,sans-serif; font-size:11px; }
+      .normal-page { width:100%; margin:0; padding:0; }
+      .normal-header { display:flex; justify-content:space-between; align-items:flex-start; gap:30px; padding-bottom:14px; border-bottom:2px solid #0f172a; }
+      .normal-business { flex:1; }
+      .normal-business h1 { margin:0 0 7px; font-size:24px; line-height:1.05; font-weight:900; }
+      .normal-business p { margin:2px 0; color:#475569; font-size:12px; line-height:1.3; }
+      .normal-title { min-width:150px; text-align:right; }
+      .normal-title h2 { margin:0 0 5px; font-size:20px; font-weight:900; }
+      .normal-title .invoice-no { font-size:12px; font-weight:800; margin-top:5px; }
+      .normal-title .status { margin-top:6px; font-size:10px; font-weight:800; }
+      .normal-info { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin:12px 0 16px; }
+      .normal-info > div { border:1px solid #e2e8f0; border-radius:7px; padding:7px 9px; min-height:39px; }
+      .normal-info span { display:block; margin-bottom:3px; color:#94a3b8; font-size:9px; font-weight:800; text-transform:uppercase; }
+      .normal-info strong { display:block; font-size:10px; }
+      table { width:100%; border-collapse:collapse; }
+      .normal-items th { padding:7px; background:#f8fafc; border-bottom:1px solid #cbd5e1; text-align:left; color:#64748b; font-size:9px; text-transform:uppercase; }
+      .normal-items td { padding:8px 7px; border-bottom:1px solid #eef2f7; vertical-align:top; font-size:10px; }
+      .normal-items th:nth-child(1) { width:52%; }
+      .normal-items th:nth-child(2) { width:12%; text-align:right; }
+      .normal-items th:nth-child(3) { width:18%; text-align:right; }
+      .normal-items th:nth-child(4) { width:18%; text-align:right; }
+      .item-sku { display:block; margin-top:2px; color:#64748b; font-size:9px; }
+      .right { text-align:right; } .strong { font-weight:800; }
+      .totals { width:46%; min-width:245px; margin:14px 0 0 auto; }
+      .totals > div { display:flex; justify-content:space-between; gap:16px; padding:6px 0; border-bottom:1px solid #eef2f7; font-size:10px; }
+      .totals .grand { font-weight:900; }
+      footer { margin-top:16px; padding-top:8px; border-top:1px solid #e2e8f0; text-align:center; color:#94a3b8; font-size:9px; }
+      tr, td, th, .normal-header, .normal-info > div, .totals { break-inside:avoid !important; page-break-inside:avoid !important; }
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>${selectedInvoice?.invoice_number || "Invoice"}</title>
+          <style>${isVat ? vatCss : normalCss}</style>
+        </head>
+        <body>${isVat ? invoiceNode.outerHTML : normalPrintHtml}</body>
+      </html>
+    `);
+    printWindow.document.close();
+
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }, 300);
   }
-
-  const companyLogo = settings?.logo_url || "";
-
-  const companyName = settings?.company_name || "LE ELECTRICS";
-  const companyVat = settings?.company_vat_number || "";
-  const currency = settings?.currency_symbol || "Rs.";
-  const receiptFooter =
-    settings?.receipt_footer || "Thank you for your business.";
 
   const selectedBranch = selectedInvoice
     ? branchMap[selectedInvoice.branch_id]
     : null;
 
-  // Use the invoice's branch details on the printed invoice.
+  // For reprints, always use the company/settings that belong to the invoice.
+  // This prevents one company's header details from appearing on another company's invoice.
+  const printSettings = selectedInvoiceSettings || settings || null;
+  const companyLogo = printSettings?.logo_url || "";
+  const companyName =
+    selectedCompany?.business_name ||
+    selectedCompany?.company_name ||
+    printSettings?.company_name ||
+    "";
+  const companyLegalName =
+    printSettings?.company_legal_name || selectedCompany?.company_name || "";
+  const companyRegistrationNumber = selectedCompany?.registration_number || "";
+  const companyVat =
+    selectedCompany?.vat_number || printSettings?.company_vat_number || "";
+  const currency = printSettings?.currency_symbol || settings?.currency_symbol || "Rs.";
+  const receiptFooter =
+    printSettings?.receipt_footer || settings?.receipt_footer || "Thank you for your business.";
+
+  // Prefer branch contact details for the invoice location, then fall back to company details.
   const invoiceAddress =
-    selectedBranch?.address || settings?.company_address || "";
+    selectedBranch?.address ||
+    selectedCompany?.address ||
+    printSettings?.company_address ||
+    "";
   const invoicePhone =
-    selectedBranch?.phone || settings?.company_phone || "";
+    selectedBranch?.phone ||
+    selectedCompany?.phone ||
+    printSettings?.company_phone ||
+    "";
   const invoiceEmail =
-    selectedBranch?.email || settings?.company_email || "";
+    selectedBranch?.email ||
+    selectedCompany?.email ||
+    printSettings?.company_email ||
+    "";
   const invoiceVat =
     selectedBranch?.vat_number || companyVat || "";
 
@@ -1404,25 +1818,66 @@ function Invoices({
             </div>
 
             <div className="print-invoice" id="print-invoice">
+              {String(selectedInvoice.invoice_type || "").toUpperCase() === "VAT" && (
+                <TaxInvoiceReprint
+                  invoice={selectedInvoice}
+                  branch={selectedBranch}
+                  company={selectedCompany}
+                  settings={printSettings}
+                  documentPrintSettings={selectedDocumentPrintSettings}
+                  customer={selectedCustomer}
+                  items={invoiceItems}
+                  currency={currency}
+                  money={formatMoney}
+                />
+              )}
+
+              {String(selectedInvoice.invoice_type || "").toUpperCase() !== "VAT" && (
+                <>
               <div className="print-header">
                 <div className="company-print-details">
+                  {companyLogo && (
+                    <img
+                      src={companyLogo}
+                      alt={companyName || "Company logo"}
+                      style={{ maxWidth: "150px", maxHeight: "64px", objectFit: "contain", marginBottom: "8px" }}
+                    />
+                  )}
+
                   {selectedBranch?.branch_name && (
                     <h1>{selectedBranch.branch_name}</h1>
+                  )}
+
+                  {selectedBranch?.branch_code && (
+                    <p><strong>Branch Code:</strong> {selectedBranch.branch_code}</p>
                   )}
 
                   {invoiceAddress && <p>{invoiceAddress}</p>}
 
                   {(invoicePhone || invoiceEmail) && (
                     <p>
-                      {[invoicePhone, invoiceEmail]
+                      {[
+                        invoicePhone ? `Tel: ${invoicePhone}` : "",
+                        invoiceEmail ? `Email: ${invoiceEmail}` : "",
+                      ]
                         .filter(Boolean)
                         .join(" • ")}
                     </p>
                   )}
 
-                  {invoiceVat && (
+                  {(invoiceVat || companyRegistrationNumber) && (
                     <p>
-                      <strong>VAT No:</strong> {invoiceVat}
+                      {invoiceVat && (
+                        <>
+                          <strong>VAT No:</strong> {invoiceVat}
+                        </>
+                      )}
+                      {invoiceVat && companyRegistrationNumber ? " • " : ""}
+                      {companyRegistrationNumber && (
+                        <>
+                          <strong>Reg. No:</strong> {companyRegistrationNumber}
+                        </>
+                      )}
                     </p>
                   )}
                 </div>
@@ -1767,7 +2222,8 @@ function Invoices({
                     </strong>
                   </div>
 
-                  {Number(selectedInvoice.balance || 0) > 0 && (
+                  {String(selectedInvoice.payment_method || "").toUpperCase() === "CASH" &&
+                    Number(selectedInvoice.balance || 0) > 0 && (
                     <div>
                       <span>Cash Change</span>
                       <strong>
@@ -1787,6 +2243,8 @@ function Invoices({
                 <div className="cancelled-watermark">
                   CANCELLED
                 </div>
+              )}
+                </>
               )}
             </div>
           </div>
@@ -2703,6 +3161,409 @@ function Invoices({
 
           body.printing-combined-credit-note .no-print {
             display: none !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
+function TaxInvoiceReprint({
+  invoice,
+  branch,
+  company,
+  settings,
+  documentPrintSettings,
+  customer,
+  items = [],
+  currency,
+  money,
+}) {
+  const supplierTin =
+    branch?.vat_number ||
+    company?.vat_number ||
+    settings?.company_vat_number ||
+    "-";
+
+  const supplierName =
+    company?.business_name ||
+    company?.company_name ||
+    settings?.company_name ||
+    branch?.branch_name ||
+    "-";
+
+  const supplierAddress =
+    branch?.address ||
+    company?.address ||
+    settings?.company_address ||
+    "-";
+
+  const supplierPhone =
+    branch?.phone ||
+    company?.phone ||
+    settings?.company_phone ||
+    "-";
+
+  const supplierEmail =
+    branch?.email ||
+    company?.email ||
+    settings?.company_email ||
+    "";
+
+  const purchaserTin =
+    invoice?.customer_vat_number ||
+    invoice?.customer_tin ||
+    "-";
+
+  const purchaserName =
+    invoice?.customer_name ||
+    "Walk-in Customer";
+
+  const purchaserAddress =
+    customer?.address ||
+    invoice?.customer_address ||
+    "-";
+
+  const purchaserPhone =
+    customer?.phone ||
+    invoice?.customer_phone ||
+    "-";
+
+  const invoiceDate = invoice?.invoice_date || invoice?.created_at;
+  const vatRate =
+    items.find((item) => Number(item?.vat_rate || 0) > 0)?.vat_rate || 18;
+
+  const total = Number(invoice?.total || 0);
+  const vat = Number(invoice?.vat_amount || 0);
+  const supply = Number(
+    invoice?.taxable_amount != null
+      ? invoice.taxable_amount
+      : total - vat
+  );
+
+  const formatTaxDate = (value) => {
+    if (!value) return "-";
+    return new Date(value).toLocaleDateString("en-GB");
+  };
+
+  return (
+    <div className="reprint-tax-doc">
+      <div className="reprint-tax-title">Tax Invoice</div>
+
+      <div className="reprint-tax-party-grid">
+        <div className="reprint-tax-cell">
+          <b>Date of Invoice:</b> {formatTaxDate(invoiceDate)}
+        </div>
+
+        <div className="reprint-tax-cell">
+          <b>Tax Invoice No.:</b> {invoice?.invoice_number || "-"}
+        </div>
+
+        <div className="reprint-tax-cell reprint-tax-party">
+          <div><b>Supplier&apos;s TIN:</b> {supplierTin}</div>
+          <div><b>Supplier&apos;s Name:</b> {supplierName}</div>
+          <div><b>Address:</b> {supplierAddress}</div>
+          <div><b>Telephone No:</b> {supplierPhone}</div>
+        </div>
+
+        <div className="reprint-tax-cell reprint-tax-party">
+          <div><b>Purchaser&apos;s TIN:</b> {purchaserTin}</div>
+          <div><b>Purchaser&apos;s Name:</b> {purchaserName}</div>
+          <div><b>Address:</b> {purchaserAddress}</div>
+          <div><b>Telephone No:</b> {purchaserPhone}</div>
+        </div>
+
+        <div className="reprint-tax-cell">
+          <b>Date of Delivery:</b> {formatTaxDate(invoiceDate)}
+        </div>
+
+        <div className="reprint-tax-cell">
+          <b>Place of Supply:</b> {branch?.branch_name || branch?.address || "-"}
+        </div>
+      </div>
+
+      <table className="reprint-tax-items">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Description of Goods or Services</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>
+              Amount
+              <br />
+              Excluding VAT
+              <br />
+              ({currency})
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {items.map((item, index) => {
+            const qty = Number(item?.quantity || 0);
+            const unitPrice = Number(item?.unit_price || 0);
+            const discount = Number(item?.discount || 0);
+
+            // Keep the same calculation used by the existing PublicInvoice Tax Invoice.
+            const excludingVat = Math.max(qty * unitPrice - discount, 0);
+
+            return (
+              <tr key={item?.id || index}>
+                <td>{String(index + 1).padStart(2, "0")}</td>
+                <td>
+                  {item?.item_name || "-"}
+                  {item?.sku && <small>{item.sku}</small>}
+                </td>
+                <td className="reprint-tax-center">{qty}</td>
+                <td className="reprint-tax-right">
+                  {currency} {money(unitPrice)}
+                </td>
+                <td className="reprint-tax-right">
+                  {currency} {money(excludingVat)}
+                </td>
+              </tr>
+            );
+          })}
+
+          <tr className="reprint-tax-total-row">
+            <td colSpan="4">Total Value of Supply:</td>
+            <td className="reprint-tax-right">
+              {currency} {money(supply)}
+            </td>
+          </tr>
+
+          <tr className="reprint-tax-total-row">
+            <td colSpan="4">
+              VAT Amount (Total Value of Supply @ {vatRate}%):
+            </td>
+            <td className="reprint-tax-right">
+              {currency} {money(vat)}
+            </td>
+          </tr>
+
+          <tr className="reprint-tax-total-row reprint-tax-strong">
+            <td colSpan="4">Total Amount including VAT:</td>
+            <td className="reprint-tax-right">
+              {currency} {money(total)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div className="reprint-tax-meta">
+        <div>
+          <b>Cashier:</b> {invoice?.cashier_name || "-"}
+        </div>
+        <div>
+          <b>Payment Method:</b> {invoice?.payment_method || "Credit"}
+        </div>
+      </div>
+
+      {documentPrintSettings?.show_footer !== false &&
+        String(documentPrintSettings?.footer_text || "").trim() && (
+          <div
+            className="reprint-tax-footer"
+            style={{
+              fontSize: Number(documentPrintSettings?.footer_font_size || 9),
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {documentPrintSettings.footer_text}
+          </div>
+        )}
+
+      {invoice?.status === "CANCELLED" && (
+        <div className="cancelled-watermark">CANCELLED</div>
+      )}
+
+      <style>{`
+        .reprint-tax-doc {
+          width: 100%;
+          box-sizing: border-box;
+          background: #fff;
+          color: #000;
+          font-family: Arial, sans-serif;
+          padding: 28px 25px;
+        }
+
+        .reprint-tax-title {
+          width: 200px;
+          box-sizing: border-box;
+          margin: 58px auto 12px;
+          border: 2px solid #222;
+          text-align: center;
+          font-size: 21px;
+          font-weight: 800;
+          padding: 10px 6px;
+          white-space: nowrap;
+        }
+
+        .reprint-tax-party-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          border-top: 1px solid #222;
+          border-left: 1px solid #222;
+          font-size: 15px;
+        }
+
+        .reprint-tax-cell {
+          border-right: 1px solid #222;
+          border-bottom: 1px solid #222;
+          padding: 7px 11px;
+          min-height: 32px;
+          box-sizing: border-box;
+        }
+
+        .reprint-tax-party {
+          line-height: 1.9;
+          min-height: 105px;
+          padding-top: 8px;
+        }
+
+        .reprint-tax-items {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 12px;
+          font-size: 11px;
+        }
+
+        .reprint-tax-items th,
+        .reprint-tax-items td {
+          border: 1px solid #222;
+          padding: 7px 5px;
+        }
+
+        .reprint-tax-items th {
+          text-align: center;
+          background: #f3f3f3;
+          font-weight: 800;
+          font-size: 11px;
+        }
+
+        .reprint-tax-items th:nth-child(1) { width: 12%; }
+        .reprint-tax-items th:nth-child(2) { width: 44%; }
+        .reprint-tax-items th:nth-child(3) { width: 12%; }
+        .reprint-tax-items th:nth-child(4) { width: 14%; }
+        .reprint-tax-items th:nth-child(5) { width: 18%; }
+
+        .reprint-tax-items small {
+          display: block;
+          font-size: 9px;
+          margin-top: 2px;
+        }
+
+        .reprint-tax-center { text-align: center; }
+        .reprint-tax-right { text-align: right; }
+
+        .reprint-tax-total-row td:first-child {
+          text-align: right;
+          font-weight: 700;
+        }
+
+        .reprint-tax-strong td {
+          font-weight: 900;
+        }
+
+        .reprint-tax-meta {
+          margin-top: 10px;
+          border: 1px solid #222;
+          padding: 8px 10px;
+          font-size: 9px;
+          line-height: 1.7;
+        }
+
+        .reprint-tax-footer {
+          text-align: center;
+          margin-top: 10px;
+          padding-top: 8px;
+          border-top: 1px solid #222;
+          font-size: 9px;
+          white-space: pre-wrap;
+        }
+
+        @media print {
+          @page {
+            size: auto;
+            margin: 8mm;
+          }
+
+          html,
+          body,
+          #root,
+          .invoices-page,
+          .invoice-modal-overlay,
+          .invoice-modal,
+          .print-invoice {
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+          }
+
+          html,
+          body,
+          #root {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+          }
+
+          .invoice-modal-overlay {
+            position: static !important;
+            inset: auto !important;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            background: #fff !important;
+          }
+
+          .invoice-modal {
+            position: static !important;
+            width: auto !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+          }
+
+          .print-invoice {
+            position: static !important;
+            left: auto !important;
+            top: auto !important;
+            width: auto !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+          }
+
+          .reprint-tax-doc {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+            break-after: auto !important;
+            page-break-after: auto !important;
+          }
+
+          .reprint-tax-title {
+            margin-top: 8px !important;
+          }
+
+          .reprint-tax-items tr {
+            page-break-inside: avoid !important;
+            page-break-after: auto !important;
           }
         }
       `}</style>

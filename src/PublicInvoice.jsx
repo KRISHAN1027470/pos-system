@@ -8,6 +8,7 @@ export default function PublicInvoice({ token }) {
   const [error, setError] = useState("");
   const [cashierName, setCashierName] = useState("-");
   const [documentPrintSettings, setDocumentPrintSettings] = useState(null);
+  const [customerDetails, setCustomerDetails] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -16,26 +17,107 @@ export default function PublicInvoice({ token }) {
       setLoading(true);
       setError("");
 
-      const { data: result, error: rpcError } = await supabase.rpc(
+      // First try the public-share RPC. New POS invoices may reach this page
+      // using a public_share_token.
+      let result = null;
+
+      const { data: publicResult, error: rpcError } = await supabase.rpc(
         "get_public_invoice",
         { p_share_token: token }
       );
 
       if (!active) return;
 
-      if (rpcError) {
-        console.error("Public invoice load error:", rpcError);
-        setError("Unable to load this invoice.");
-        setLoading(false);
-        return;
+      if (!rpcError && publicResult?.invoice) {
+        result = publicResult;
       }
 
+      // Reprints from Invoices.jsx use the invoice UUID in /invoice/:id.
+      // If the value was not a public share token, load the authenticated
+      // company's invoice directly and build the same data shape used below.
       if (!result?.invoice) {
+        const { data: invoiceRow, error: invoiceError } = await supabase
+          .from("invoices")
+          .select("*")
+          .eq("id", token)
+          .maybeSingle();
+
+        if (invoiceError) {
+          console.error("Invoice reprint load error:", invoiceError);
+        }
+
+        if (invoiceRow) {
+          const [
+            { data: itemRows, error: itemsError },
+            { data: branchRow, error: branchError },
+            { data: settingsRow, error: settingsError },
+          ] = await Promise.all([
+            supabase
+              .from("invoice_items")
+              .select("*")
+              .eq("invoice_id", invoiceRow.id)
+              .order("id", { ascending: true }),
+            invoiceRow.branch_id
+              ? supabase
+                  .from("branches")
+                  .select("*")
+                  .eq("id", invoiceRow.branch_id)
+                  .maybeSingle()
+              : Promise.resolve({ data: null, error: null }),
+            invoiceRow.company_id
+              ? supabase
+                  .from("app_settings")
+                  .select("*")
+                  .eq("company_id", invoiceRow.company_id)
+                  .maybeSingle()
+              : Promise.resolve({ data: null, error: null }),
+          ]);
+
+          if (itemsError) console.warn("Invoice items load error:", itemsError);
+          if (branchError) console.warn("Invoice branch load error:", branchError);
+          if (settingsError) console.warn("Invoice settings load error:", settingsError);
+
+          result = {
+            invoice: invoiceRow,
+            items: itemRows || [],
+            branch: branchRow || null,
+            settings: settingsRow || null,
+          };
+        }
+      }
+
+      if (!active) return;
+
+      if (!result?.invoice) {
+        if (rpcError) {
+          console.error("Public invoice load error:", rpcError);
+        }
         setError("Invoice not found or link is invalid.");
         setLoading(false);
         return;
       }
 
+      // Resolve the customer details used by the Tax Invoice.
+      // Prefer customer data returned by the public invoice RPC. When the current
+      // session is authenticated, fall back to the customers table so direct
+      // invoices immediately show the latest address and telephone number.
+      let resolvedCustomer = result?.customer || result?.invoice?.customer || null;
+
+      if (!resolvedCustomer && result?.invoice?.customer_id) {
+        const { data: customerRow, error: customerError } = await supabase
+          .from("customers")
+          .select("id, name, address, phone, vat_number")
+          .eq("id", result.invoice.customer_id)
+          .maybeSingle();
+
+        if (!customerError && customerRow) {
+          resolvedCustomer = customerRow;
+        } else if (customerError) {
+          console.warn("Unable to resolve invoice customer:", customerError);
+        }
+      }
+
+      setCustomerDetails(resolvedCustomer);
       setData(result);
 
       const invoiceDocumentType =
@@ -43,11 +125,42 @@ export default function PublicInvoice({ token }) {
           ? "TAX_INVOICE"
           : "NON_VAT_INVOICE";
 
-      const { data: printRow, error: printError } = await supabase
+      // Use the SAME company-scoped settings logic as Settings.jsx.
+      // For an authenticated reprint, the logged-in user's company is the
+      // authoritative company. Fall back to the invoice company for public links.
+      let printSettingsCompanyId = result.invoice.company_id || null;
+
+      const { data: authData } = await supabase.auth.getUser();
+      const authUser = authData?.user || null;
+
+      if (authUser) {
+        const { data: profileRow, error: profileError } = await supabase
+          .from("user_profiles")
+          .select("company_id")
+          .eq("id", authUser.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.warn("Unable to resolve reprint company:", profileError);
+        } else if (profileRow?.company_id) {
+          printSettingsCompanyId = profileRow.company_id;
+        }
+      }
+
+      let printSettingsQuery = supabase
         .from("document_print_settings")
         .select("*")
-        .eq("document_type", invoiceDocumentType)
-        .maybeSingle();
+        .eq("document_type", invoiceDocumentType);
+
+      if (printSettingsCompanyId) {
+        printSettingsQuery = printSettingsQuery.eq(
+          "company_id",
+          printSettingsCompanyId
+        );
+      }
+
+      const { data: printRow, error: printError } =
+        await printSettingsQuery.maybeSingle();
 
       if (printError) {
         console.warn("Invoice document print settings load error:", printError);
@@ -131,6 +244,7 @@ export default function PublicInvoice({ token }) {
     return (
       <TaxInvoiceLayout
         invoice={invoice}
+        customer={customerDetails}
         branch={branch}
         settings={settings}
         items={items}
@@ -176,20 +290,10 @@ export default function PublicInvoice({ token }) {
               />
             )}
 
-            {settings?.receipt_show_business_name !== false && (
-              <h1 style={{ margin: "0 0 5px", fontSize: 25 }}>{companyName}</h1>
-            )}
-
-            {settings?.receipt_show_business_address && settings?.company_address && (
-              <p style={smallTextStyle}>{settings.company_address}</p>
-            )}
-
-            {settings?.receipt_show_business_phone && settings?.company_phone && (
-              <p style={smallTextStyle}>{settings.company_phone}</p>
-            )}
-
-            {settings?.receipt_show_branch_name !== false && branch?.branch_name && (
-              <p style={{ ...smallTextStyle, fontWeight: 800 }}>{branch.branch_name}</p>
+            {branch?.branch_name && (
+              <h1 style={{ margin: "0 0 7px", fontSize: 30, fontWeight: 900 }}>
+                {branch.branch_name}
+              </h1>
             )}
 
             {settings?.receipt_show_branch_address !== false && branch?.address && (
@@ -197,7 +301,11 @@ export default function PublicInvoice({ token }) {
             )}
 
             {settings?.receipt_show_branch_phone !== false && branch?.phone && (
-              <p style={smallTextStyle}>{branch.phone}</p>
+              <p style={smallTextStyle}>Tel: {branch.phone}</p>
+            )}
+
+            {branch?.email && (
+              <p style={smallTextStyle}>Email: {branch.email}</p>
             )}
           </div>
 
@@ -523,13 +631,13 @@ function printTaxInvoice() {
   window.print();
 }
 
-function TaxInvoiceLayout({ invoice, branch, settings, items, cashierName, currency, money, printSettings }) {
-  const customer = invoice.customer || {};
-  const supplierTin = settings?.tin || settings?.tin_number || settings?.vat_number || "103441161";
+function TaxInvoiceLayout({ invoice, customer: customerProp, branch, settings, items, cashierName, currency, money, printSettings }) {
+  const customer = customerProp || invoice.customer || {};
+  const supplierTin = branch?.vat_number || settings?.company_vat_number || settings?.vat_number || settings?.tin || settings?.tin_number || "-";
   const purchaserTin = invoice.customer_vat_number || invoice.customer_tin || customer.vat_number || customer.tin || "-";
   const supplierName = branch?.branch_name || settings?.company_name || "Lanka Electrics";
-  const supplierAddress = settings?.company_address || branch?.address || "No: 120, First Cross Street, Colombo - 11";
-  const supplierPhone = settings?.company_phone || branch?.phone || "077 305 6626 / 011 243 0137";
+  const supplierAddress = branch?.address || settings?.company_address || "-";
+  const supplierPhone = branch?.phone || settings?.company_phone || "-";
   const purchaserName = invoice.customer_name || customer.name || "Walk-in Customer";
   const purchaserAddress = invoice.customer_address || customer.address || "-";
   const purchaserPhone = invoice.customer_phone || customer.phone || "-";

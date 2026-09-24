@@ -243,8 +243,16 @@ function POS({ activeBranch, branchId: activeBranchId, branches: appBranches = [
     (cashier) => cashier.id === cashierId
   );
 
+  // POS must show only products that belong to the selected branch.
+  // branch_stock is the source of truth for which item record belongs to this branch.
+  // This prevents old/duplicate company item records (same SKU) from appearing with Stock 0.
   const filteredItems = items.filter((item) => {
     const text = search.toLowerCase();
+
+    const belongsToSelectedBranch =
+      !!branchId && Object.prototype.hasOwnProperty.call(branchStock, item.id);
+
+    if (!belongsToSelectedBranch) return false;
 
     return (
       (item.name || "").toLowerCase().includes(text) ||
