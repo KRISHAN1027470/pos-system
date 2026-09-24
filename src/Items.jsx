@@ -236,6 +236,7 @@ setItems(normalizedItems);
     if (editingId) {
       const { error } = await supabase.rpc("update_item", {
         p_item_id: editingId,
+        p_sku: form.sku.trim(),
         p_name: form.name.trim(),
         p_category: form.category.trim(),
         p_unit: form.unit || "PCS",
