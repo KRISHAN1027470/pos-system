@@ -234,13 +234,25 @@ setItems(normalizedItems);
     };
 
     if (editingId) {
-      const { error } = await supabase
-        .from("items")
-        .update(payload)
-        .eq("id", editingId);
+      const { error } = await supabase.rpc("update_item", {
+        p_item_id: editingId,
+        p_name: form.name.trim(),
+        p_category: form.category.trim(),
+        p_unit: form.unit || "PCS",
+        p_cost_price: Number(form.cost_price || 0),
+        p_selling_price: Number(form.selling_price || 0),
+        p_wholesale_price: wholesalePrice,
+        p_vat_type: form.vat_type,
+        p_vat_rate:
+          form.vat_type === "VAT"
+            ? Number(form.vat_rate || 0)
+            : 0,
+        p_reorder_level: Number(form.reorder_level || 0),
+        p_branch_id: selectedBranchId,
+      });
 
       if (error) {
-        console.error("Update item error:", error);
+        console.error("Update item RPC error:", error);
         alert(error.message);
         return;
       }
