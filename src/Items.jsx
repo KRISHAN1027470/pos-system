@@ -323,28 +323,46 @@ setItems(normalizedItems);
   }
 
   async function deleteItem(id) {
+    if (!selectedBranchId) {
+      alert("Please select a branch.");
+      return;
+    }
+
+    const branch = branches.find(
+      (b) => b.id === selectedBranchId
+    );
+
     const confirmed = window.confirm(
-      "Are you sure you want to delete this item?"
+      `Are you sure you want to remove this item from ${
+        branch?.branch_name || "this branch"
+      }?\n\nThis will not delete the item from other branches.`
     );
 
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.rpc("delete_item", {
-        p_item_id: id,
-      });
+      const { error } = await supabase.rpc(
+        "remove_item_from_branch",
+        {
+          p_item_id: id,
+          p_branch_id: selectedBranchId,
+        }
+      );
 
       if (error) {
-        console.error("Delete item RPC error:", error);
+        console.error("Remove branch item error:", error);
         alert(error.message);
         return;
       }
 
-      alert("Item deleted successfully.");
+      alert("Item removed from this branch successfully.");
       await fetchItems();
     } catch (err) {
-      console.error("Delete item error:", err);
-      alert(err?.message || "Unable to delete item.");
+      console.error("Remove branch item error:", err);
+      alert(
+        err?.message ||
+          "Unable to remove item from this branch."
+      );
     }
   }
 
