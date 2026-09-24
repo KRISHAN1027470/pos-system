@@ -253,16 +253,17 @@ function Items({ activeBranch, branchId: activeBranchId, branches: appBranches =
       });
 
       if (error) {
-        console.error("Create item RPC error:", error);
+  console.error("Create item RPC error:", error);
 
-        if (error.code === "23505") {
-          alert("SKU already exists.");
-        } else {
-          alert(error.message);
-        }
+  alert(
+    `ERROR CODE: ${error.code || "N/A"}\n\n` +
+    `MESSAGE: ${error.message || "N/A"}\n\n` +
+    `DETAILS: ${error.details || "N/A"}\n\n` +
+    `HINT: ${error.hint || "N/A"}`
+  );
 
-        return;
-      }
+  return;
+}
 
       alert("Item saved successfully.");
     }
