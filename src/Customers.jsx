@@ -109,25 +109,40 @@ function Customers() {
     };
 
     if (editingId) {
-      const { error } = await supabase
-        .from("customers")
-        .update(payload)
-        .eq("id", editingId);
+      const { error } = await supabase.rpc("update_customer", {
+        p_customer_id: editingId,
+        p_customer_type: form.customer_type,
+        p_name: form.name.trim(),
+        p_vat_number:
+          form.customer_type === "VAT" ? form.vat_number.trim() : "",
+        p_phone: form.phone.trim(),
+        p_email: form.email.trim(),
+        p_address: form.address.trim(),
+        p_credit_limit: Number(form.credit_limit || 0),
+      });
 
       if (error) {
-        console.error("Update error:", error);
+        console.error("Update customer RPC error:", error);
         alert(error.message);
         return;
       }
 
       alert("Customer updated successfully.");
     } else {
-      const { error } = await supabase
-        .from("customers")
-        .insert([payload]);
+      const { error } = await supabase.rpc("create_customer", {
+        p_customer_code: form.customer_code,
+        p_customer_type: form.customer_type,
+        p_name: form.name.trim(),
+        p_vat_number:
+          form.customer_type === "VAT" ? form.vat_number.trim() : "",
+        p_phone: form.phone.trim(),
+        p_email: form.email.trim(),
+        p_address: form.address.trim(),
+        p_credit_limit: Number(form.credit_limit || 0),
+      });
 
       if (error) {
-        console.error("Insert error:", error);
+        console.error("Create customer RPC error:", error);
         alert(error.message);
         return;
       }
@@ -221,10 +236,9 @@ function Customers() {
 
     if (!confirmed) return;
 
-    const { error } = await supabase
-      .from("customers")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.rpc("delete_customer", {
+      p_customer_id: id,
+    });
 
     if (error) {
       console.error("Delete error:", error);
