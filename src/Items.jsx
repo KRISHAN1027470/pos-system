@@ -113,9 +113,10 @@ function Items({ activeBranch, branchId: activeBranchId, branches: appBranches =
       .select(`
         *,
         branch_stock (
-          quantity,
-          branch_id
-        )
+  quantity,
+  branch_id,
+  reorder_level
+)
       `)
       .order("created_at", { ascending: false });
 
@@ -123,20 +124,30 @@ function Items({ activeBranch, branchId: activeBranchId, branches: appBranches =
       console.error("Load items error:", error);
       alert(error.message);
     } else {
-      const normalizedItems = (data || []).map((item) => {
-        const selectedBranchStock = (item.branch_stock || []).find(
-          (row) => row.branch_id === selectedBranchId
-        );
+      const normalizedItems = (data || [])
+  .map((item) => {
+    const selectedBranchStock = (item.branch_stock || []).find(
+      (row) => row.branch_id === selectedBranchId
+    );
 
-        const branchStockQty = Number(selectedBranchStock?.quantity || 0);
+    // Item is not assigned to this branch
+    if (!selectedBranchStock) {
+      return null;
+    }
 
-        return {
-          ...item,
-          stock_qty: branchStockQty,
-        };
-      });
+    return {
+      ...item,
+      stock_qty: Number(selectedBranchStock.quantity || 0),
+      reorder_level: Number(
+        selectedBranchStock.reorder_level ??
+        item.reorder_level ??
+        0
+      ),
+    };
+  })
+  .filter(Boolean);
 
-      setItems(normalizedItems);
+setItems(normalizedItems);
     }
 
     setLoading(false);
