@@ -316,6 +316,16 @@ function Quotes({
     (customer) => customer.id === customerId
   );
 
+  const selectedBranch = branches.find((branch) => branch.id === branchId);
+  const branchCanIssueVat = Boolean(String(selectedBranch?.vat_number || "").trim());
+
+  useEffect(() => {
+    if (!editingQuoteId && quoteType === "VAT" && branchId && !branchCanIssueVat) {
+      setQuoteType("NON_VAT");
+      setCustomerId("");
+    }
+  }, [branchId, branchCanIssueVat, editingQuoteId, quoteType]);
+
   const customerCreditLimit = Number(
     selectedCustomer?.credit_limit || 0
   );
@@ -383,6 +393,9 @@ function Quotes({
   });
 
   const filteredQuotes = quotes.filter((quote) => {
+    // Quotation history must show only the currently selected branch.
+    if (!branchId || quote.branch_id !== branchId) return false;
+
     const text = quoteSearch.toLowerCase();
 
     return (
@@ -799,6 +812,11 @@ function Quotes({
       return;
     }
 
+    if (quoteType === "VAT" && !branchCanIssueVat) {
+      alert("VAT quotation cannot be created for this branch because no VAT number is registered. Please use a Non-VAT quotation.");
+      return;
+    }
+
     if (quoteType === "VAT" && !selectedCustomer) {
       alert("Select a VAT customer.");
       return;
@@ -963,6 +981,11 @@ function Quotes({
       return;
     }
 
+    if (quoteType === "VAT" && !branchCanIssueVat) {
+      alert("VAT quotation cannot be created for this branch because no VAT number is registered. Please use a Non-VAT quotation.");
+      return;
+    }
+
     if (
       quoteType === "VAT" &&
       !selectedCustomer
@@ -1040,6 +1063,7 @@ function Quotes({
           .from("quotes")
           .select("id, quote_number, total, public_share_token, cashier_id")
           .eq("quote_number", result.quote_number)
+          .eq("branch_id", branchId)
           .maybeSingle();
 
         if (shareError) {
@@ -1218,6 +1242,7 @@ function Quotes({
       .from("invoices")
       .select("id, invoice_number")
       .eq("invoice_number", invoiceNumber)
+      .eq("branch_id", selectedQuote?.branch_id || branchId)
       .maybeSingle();
 
     if (error) throw error;
@@ -1498,7 +1523,7 @@ Stock will be checked and reduced after conversion.`
       .tax-q-logo { text-align:right; height:52px; padding-right:8px; }
       .tax-q-logo img { max-width:120px; max-height:50px; object-fit:contain; }
       .tax-q-logo span { font-size:12px; font-weight:900; letter-spacing:4px; }
-      .tax-q-title { width:150px; margin:0 auto 12px; border:2px solid #222; text-align:center; font-size:21px; font-weight:800; padding:10px 6px; }
+      .tax-q-title { width:100%; margin:0 0 12px; border:1px solid #222; text-align:center; font-size:21px; font-weight:800; padding:10px 12px; background:#f8fafc; }
       .tax-q-grid { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid #222; border-left:1px solid #222; font-size:15px; }
       .tax-q-grid>div { border-right:1px solid #222; border-bottom:1px solid #222; padding:9px 11px; min-height:36px; font-size:15px; }
       .tax-q-grid .party { min-height:135px; line-height:1.9; padding-top:9px; font-size:15px; }
@@ -1571,8 +1596,17 @@ Stock will be checked and reduced after conversion.`
                 ? "active"
                 : ""
             }
-            disabled={Boolean(editingQuoteId)}
+            disabled={Boolean(editingQuoteId) || !branchCanIssueVat}
+            title={
+              branchCanIssueVat
+                ? "Create a VAT quotation"
+                : "VAT quotations are unavailable because this branch has no VAT number."
+            }
             onClick={() => {
+              if (!branchCanIssueVat) {
+                alert("VAT quotation is not available for this branch because no VAT number is registered.");
+                return;
+              }
               setQuoteType("VAT");
               setCustomerId("");
             }}
@@ -2232,7 +2266,7 @@ Stock will be checked and reduced after conversion.`
           <div>
             <h3>Quotation History</h3>
             <span>
-              {quotes.length} quotations
+              {filteredQuotes.length} quotations
             </span>
           </div>
 
@@ -2968,10 +3002,10 @@ Stock will be checked and reduced after conversion.`
                           alt="Company Logo"
                           style={{
                             display: "block",
-                            width: "90px",
-                            height: "45px",
-                            maxWidth: "90px",
-                            maxHeight: "45px",
+                            width: "auto",
+                            height: "auto",
+                            maxWidth: `${Number(nonVatSettings.logo_width || 90)}px`,
+                            maxHeight: `${Number(nonVatSettings.logo_height || 45)}px`,
                             objectFit: "contain",
                             objectPosition: "left center",
                             marginBottom: "8px",
@@ -2982,10 +3016,10 @@ Stock will be checked and reduced after conversion.`
                       <h1>{businessName}</h1>
 
                       <div className="quote-company-contact">
-                        {businessAddress ? (
+                        {nonVatSettings.show_address !== false && businessAddress ? (
                           <div>{businessAddress}</div>
                         ) : null}
-                        {businessPhone ? (
+                        {nonVatSettings.show_telephone !== false && businessPhone ? (
                           <div>Tel: {businessPhone}</div>
                         ) : null}
                         {businessEmail ? (
@@ -3203,12 +3237,47 @@ Stock will be checked and reduced after conversion.`
                 </div>
               </div>
 
-              {selectedQuote.notes && (
+              {documentPrintSettings.NON_VAT_QUOTATION?.show_notes !== false &&
+                selectedQuote.notes && (
                 <div className="quote-print-notes">
                   <strong>Notes</strong>
                   <p>{selectedQuote.notes}</p>
                 </div>
               )}
+
+              <style>{`
+                .print-quote .quote-print-header {
+                  padding: ${Number(documentPrintSettings.NON_VAT_QUOTATION?.document_padding || 0)}px;
+                }
+                .print-quote .quote-business h1 {
+                  font-size: ${Number(documentPrintSettings.NON_VAT_QUOTATION?.title_font_size || 21)}px !important;
+                }
+                .print-quote .quote-company-contact,
+                .print-quote .quote-document-subtitle,
+                .print-quote .quote-print-info {
+                  font-size: ${Number(documentPrintSettings.NON_VAT_QUOTATION?.header_font_size || 15)}px !important;
+                }
+                .print-quote .quote-print-info strong {
+                  font-size: ${Number(documentPrintSettings.NON_VAT_QUOTATION?.party_font_size || 15)}px !important;
+                }
+                .print-quote .quote-print-table th {
+                  font-size: ${Number(documentPrintSettings.NON_VAT_QUOTATION?.table_header_font_size || 11)}px !important;
+                  padding: ${Number(documentPrintSettings.NON_VAT_QUOTATION?.table_cell_padding || 7)}px !important;
+                }
+                .print-quote .quote-print-table td {
+                  font-size: ${Number(documentPrintSettings.NON_VAT_QUOTATION?.item_font_size || 11)}px !important;
+                  padding: ${Number(documentPrintSettings.NON_VAT_QUOTATION?.table_cell_padding || 7)}px !important;
+                }
+                .print-quote .quote-print-summary {
+                  font-size: ${Number(documentPrintSettings.NON_VAT_QUOTATION?.total_font_size || 11)}px !important;
+                }
+                @media print {
+                  @page {
+                    size: A4;
+                    margin: ${Number(documentPrintSettings.NON_VAT_QUOTATION?.page_margin_mm || 10)}mm;
+                  }
+                }
+              `}</style>
 
               {documentPrintSettings.NON_VAT_QUOTATION?.show_footer !== false &&
                 String(documentPrintSettings.NON_VAT_QUOTATION?.footer_text || "").trim() && (
@@ -3240,10 +3309,10 @@ Stock will be checked and reduced after conversion.`
 
 
 function TaxQuotationLayout({ quote, quoteItems, branch, customer, cashierName, formatMoney, formatDate, detailsLoading, settings }) {
-  const supplierTin = "103441161";
-  const supplierName = branch?.branch_name || "Lanka Electrics";
-  const supplierAddress = branch?.address || "No: 120, First Cross Street, Colombo - 11";
-  const supplierPhone = branch?.phone || "077 305 6626 / 011 243 0137";
+  const supplierTin = branch?.vat_number || settings?.company_vat_number || settings?.vat_number || "-";
+  const supplierName = branch?.branch_name || settings?.company_name || "Lanka Electrics";
+  const supplierAddress = branch?.address || settings?.company_address || "-";
+  const supplierPhone = branch?.phone || settings?.company_phone || "-";
   const purchaserTin = quote.customer_vat_number || customer?.vat_number || customer?.tin || "-";
   const purchaserName = quote.customer_name || customer?.name || "Walk-in Customer";
   const purchaserAddress = customer?.address || customer?.billing_address || "-";
@@ -3253,55 +3322,111 @@ function TaxQuotationLayout({ quote, quoteItems, branch, customer, cashierName, 
   const vat = Number(quote.vat_amount || 0);
   const supply = Number(quote.taxable_amount ?? (total - vat));
 
+  const n = (value, fallback) => {
+    const x = Number(value);
+    return Number.isFinite(x) && x >= 0 ? x : fallback;
+  };
+
+  const logoWidth = n(settings?.logo_width, 120);
+  const logoHeight = n(settings?.logo_height, 60);
+  const titleFont = n(settings?.title_font_size, 21);
+  const headerFont = n(settings?.header_font_size, 15);
+  const partyFont = n(settings?.party_font_size, 15);
+  const tableHeaderFont = n(settings?.table_header_font_size, 11);
+  const itemFont = n(settings?.item_font_size, 11);
+  const totalFont = n(settings?.total_font_size, 11);
+  const footerFont = n(settings?.footer_font_size, 9);
+  const pageMargin = n(settings?.page_margin_mm, 10);
+  const documentPadding = n(settings?.document_padding, 25);
+  const titleWidth = Math.max(n(settings?.title_width, 150), 80);
+  const headerHeight = n(settings?.header_height, 32);
+  const partyHeight = n(settings?.party_section_height, 105);
+  const cellPadding = n(settings?.table_cell_padding, 7);
+
   return <div className="tax-quote-doc">
     <div className="tax-q-logo">
       {settings?.show_logo !== false && settings?.logo_url ? (
         <img src={settings.logo_url} alt="Logo" />
       ) : null}
     </div>
+
     <div className="tax-q-title">Tax Quotation</div>
+
     <div className="tax-q-grid">
-      <div><b>Date of Quotation:</b> {formatDate(quote.quote_date)}</div><div><b>Tax Quotation No.:</b> {quote.quote_number}</div>
-      <div className="party"><p><b>Supplier's TIN:</b> {supplierTin}</p><p><b>Supplier's Name:</b> {supplierName}</p><p><b>Address:</b> {supplierAddress}</p><p><b>Telephone No:</b> {supplierPhone}</p></div>
-      <div className="party"><p><b>Purchaser's TIN:</b> {purchaserTin}</p><p><b>Purchaser's Name:</b> {purchaserName}</p><p><b>Address:</b> {purchaserAddress}</p><p><b>Telephone No:</b> {purchaserPhone}</p></div>
-      <div><b>Valid Until:</b> {formatDate(quote.valid_until)}</div><div><b>Place of Supply:</b> {branch?.branch_name || "-"}</div>
+      <div><b>Date of Quotation:</b> {formatDate(quote.quote_date)}</div>
+      <div><b>Tax Quotation No.:</b> {quote.quote_number}</div>
+
+      <div className="party">
+        {settings?.show_tin !== false && <p><b>Supplier's TIN:</b> {supplierTin}</p>}
+        <p><b>Supplier's Name:</b> {supplierName}</p>
+        {settings?.show_address !== false && <p><b>Address:</b> {supplierAddress}</p>}
+        {settings?.show_telephone !== false && <p><b>Telephone No:</b> {supplierPhone}</p>}
+      </div>
+
+      <div className="party">
+        {settings?.show_tin !== false && <p><b>Purchaser's TIN:</b> {purchaserTin}</p>}
+        <p><b>Purchaser's Name:</b> {purchaserName}</p>
+        {settings?.show_address !== false && <p><b>Address:</b> {purchaserAddress}</p>}
+        {settings?.show_telephone !== false && <p><b>Telephone No:</b> {purchaserPhone}</p>}
+      </div>
+
+      <div><b>Valid Until:</b> {formatDate(quote.valid_until)}</div>
+      <div><b>Place of Supply:</b> {settings?.show_branch !== false ? (branch?.branch_name || "-") : "-"}</div>
     </div>
 
     {settings?.show_cashier !== false && (
-      <div
-        style={{
-          marginTop: "10px",
-          border: "1px solid #222",
-          padding: "9px 11px",
-          fontSize: `${Number(settings?.header_font_size || 15)}px`,
-        }}
-      >
-        <b>Cashier:</b> {cashierName || "-"}
-      </div>
+      <div className="tax-q-meta"><b>Cashier:</b> {cashierName || "-"}</div>
     )}
-    {detailsLoading ? <p>Loading quotation items...</p> : <table className="tax-q-table"><thead><tr><th>Reference</th><th>Description of Goods or Services</th><th>Quantity</th><th>Unit Price</th><th>Amount<br/>Excluding VAT<br/>(Rs.)</th></tr></thead><tbody>
-      {quoteItems.map((item,index)=>{const qty=Number(item.quantity||0),unit=Number(item.unit_price||0),discount=Number(item.discount||0),excluding=Math.max(qty*unit-discount,0);return <tr key={item.id||index}><td>{String(index+1).padStart(2,"0")}</td><td>{item.item_name}{item.sku?<small>{item.sku}</small>:null}</td><td className="c">{qty}</td><td className="r">Rs. {formatMoney(unit)}</td><td className="r">Rs. {formatMoney(excluding)}</td></tr>})}
-      <tr className="sum"><td colSpan="4">Total Value of Supply:</td><td className="r">Rs. {formatMoney(supply)}</td></tr>
-      <tr className="sum"><td colSpan="4">VAT Amount (Total Value of Supply @ {vatRate}%):</td><td className="r">Rs. {formatMoney(vat)}</td></tr>
-      <tr className="sum total"><td colSpan="4">Total Amount including VAT:</td><td className="r">Rs. {formatMoney(total)}</td></tr>
-    </tbody></table>}
-    {/* Footer comes only from document_print_settings for TAX_QUOTATION. */}
+
+    {settings?.show_notes !== false && quote.notes && (
+      <div className="tax-q-meta"><b>Notes:</b> {quote.notes}</div>
+    )}
+
+    {detailsLoading ? <p>Loading quotation items...</p> : (
+      <table className="tax-q-table">
+        <thead><tr><th>Reference</th><th>Description of Goods or Services</th><th>Quantity</th><th>Unit Price</th><th>Amount<br/>Excluding VAT<br/>(Rs.)</th></tr></thead>
+        <tbody>
+          {quoteItems.map((item,index)=>{
+            const qty=Number(item.quantity||0),unit=Number(item.unit_price||0),discount=Number(item.discount||0),excluding=Math.max(qty*unit-discount,0);
+            return <tr key={item.id||index}><td>{String(index+1).padStart(2,"0")}</td><td>{item.item_name}{item.sku?<small>{item.sku}</small>:null}</td><td className="c">{qty}</td><td className="r">Rs. {formatMoney(unit)}</td><td className="r">Rs. {formatMoney(excluding)}</td></tr>
+          })}
+          <tr className="sum"><td colSpan="4">Total Value of Supply:</td><td className="r">Rs. {formatMoney(supply)}</td></tr>
+          <tr className="sum"><td colSpan="4">VAT Amount (Total Value of Supply @ {vatRate}%):</td><td className="r">Rs. {formatMoney(vat)}</td></tr>
+          <tr className="sum total"><td colSpan="4">Total Amount including VAT:</td><td className="r">Rs. {formatMoney(total)}</td></tr>
+        </tbody>
+      </table>
+    )}
+
     {settings?.show_footer !== false && String(settings?.footer_text || "").trim() && (
-      <div
-        className="tax-q-footer"
-        style={{
-          marginTop: "18px",
-          paddingTop: "10px",
-          borderTop: "1px solid #222",
-          textAlign: "center",
-          whiteSpace: "pre-wrap",
-          fontSize: `${Number(settings?.footer_font_size || 9)}px`,
-        }}
-      >
-        {settings.footer_text}
-      </div>
+      <div className="tax-q-footer">{settings.footer_text}</div>
     )}
-    <style>{`.tax-quote-doc{font-family:Arial,sans-serif;color:#000;padding:8px 4px;font-size:15px}.tax-q-logo{text-align:right;height:52px;padding-right:8px}.tax-q-logo img{max-width:120px;max-height:50px;object-fit:contain}.tax-q-logo span{font-size:15px;font-weight:900;letter-spacing:4px;padding:1px 3px}.tax-q-title{width:150px;margin:-2px auto 12px;border:2px solid #222;text-align:center;font-size:21px;font-weight:800;padding:10px 6px}.tax-q-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #222;border-left:1px solid #222;font-size:15px}.tax-q-grid>div{border-right:1px solid #222;border-bottom:1px solid #222;padding:9px 11px;min-height:36px;font-size:15px}.tax-q-grid .party{min-height:135px;line-height:1.9;padding-top:9px;font-size:15px}.tax-q-grid p{margin:5px 0}.tax-q-grid .wide{grid-column:1/-1;min-height:38px}.tax-q-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:15px}.tax-q-table th,.tax-q-table td{border:1px solid #222;padding:8px 6px;font-size:15px}.tax-q-table th{text-align:center;background:#f3f3f3}.tax-q-table th:nth-child(2){width:44%}.tax-q-table small{display:block;font-size:13px}.tax-q-table .c{text-align:center}.tax-q-table .r{text-align:right}.tax-q-table .sum td:first-child{text-align:right;font-weight:700}.tax-q-table .total td{font-weight:900}@media print{.tax-quote-doc{padding:0;font-size:15px}.tax-q-title{margin-top:-2px}}`}</style>
+
+    <style>{`
+      .tax-quote-doc{font-family:Arial,sans-serif;color:#000;padding:${documentPadding}px;font-size:${headerFont}px}
+      .tax-q-logo{text-align:right;min-height:${Math.max(headerHeight,logoHeight)}px;padding-right:8px}
+      .tax-q-logo img{width:auto;height:auto;max-width:${logoWidth}px;max-height:${logoHeight}px;object-fit:contain}
+      .tax-q-title{width:100%;box-sizing:border-box;margin:0 0 12px;border:1px solid #222;text-align:center;font-size:${titleFont}px;font-weight:800;padding:10px 12px;white-space:nowrap;background:#f8fafc}
+      .tax-q-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #222;border-left:1px solid #222;font-size:${headerFont}px}
+      .tax-q-grid>div{border-right:1px solid #222;border-bottom:1px solid #222;padding:${cellPadding}px 11px;min-height:${headerHeight}px;font-size:${headerFont}px}
+      .tax-q-grid .party{min-height:${partyHeight}px;line-height:1.9;padding-top:8px;font-size:${partyFont}px}
+      .tax-q-grid p{margin:5px 0}
+      .tax-q-meta{margin-top:10px;border:1px solid #222;padding:${cellPadding}px 11px;font-size:${headerFont}px}
+      .tax-q-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:${itemFont}px}
+      .tax-q-table th,.tax-q-table td{border:1px solid #222;padding:${cellPadding}px 6px}
+      .tax-q-table th{text-align:center;background:#f3f3f3;font-size:${tableHeaderFont}px}
+      .tax-q-table td{font-size:${itemFont}px}
+      .tax-q-table th:nth-child(2){width:44%}
+      .tax-q-table small{display:block;font-size:${Math.max(itemFont-2,7)}px}
+      .tax-q-table .c{text-align:center}.tax-q-table .r{text-align:right}
+      .tax-q-table .sum td{font-size:${totalFont}px}
+      .tax-q-table .sum td:first-child{text-align:right;font-weight:700}
+      .tax-q-table .total td{font-weight:900}
+      .tax-q-footer{margin-top:18px;padding-top:10px;border-top:1px solid #222;text-align:center;white-space:pre-wrap;font-size:${footerFont}px}
+      @media print{
+        @page{size:A4;margin:${pageMargin}mm}
+        .tax-quote-doc{padding:0}
+      }
+    `}</style>
   </div>;
 }
 

@@ -186,8 +186,20 @@ function POS({ activeBranch, branchId: activeBranchId, branches: appBranches = [
       alert(branchResult.error.message);
       setBranches(appBranches || []);
     } else {
-      const activeBranches =
-        appBranches?.length ? appBranches : branchResult.data || [];
+      const dbBranches = branchResult.data || [];
+
+      const activeBranches = appBranches?.length
+        ? appBranches.map((appBranch) => {
+            const dbBranch = dbBranches.find(
+              (dbRow) => dbRow.id === appBranch.id
+            );
+
+            return {
+              ...appBranch,
+              ...(dbBranch || {}),
+            };
+          })
+        : dbBranches;
 
       setBranches(activeBranches);
 
@@ -219,6 +231,20 @@ function POS({ activeBranch, branchId: activeBranchId, branches: appBranches = [
   const selectedCustomer = customers.find(
     (customer) => customer.id === customerId
   );
+
+  const selectedBranch = branches.find(
+    (branch) => branch.id === branchId
+  );
+
+  const branchCanIssueVat =
+    !!String(selectedBranch?.vat_number || "").trim();
+
+  useEffect(() => {
+    if (branchId && selectedBranch && !branchCanIssueVat && invoiceType === "VAT") {
+      setInvoiceType("NON_VAT");
+      setCustomerId("");
+    }
+  }, [branchId, selectedBranch?.vat_number, branchCanIssueVat, invoiceType]);
 
   const customerCreditLimit = Number(
     selectedCustomer?.credit_limit || 0
@@ -652,6 +678,13 @@ function POS({ activeBranch, branchId: activeBranchId, branches: appBranches = [
       return;
     }
 
+    if (invoiceType === "VAT" && !branchCanIssueVat) {
+      alert(
+        "VAT invoice cannot be created for this branch. This branch is not VAT registered. Please create a Non-VAT invoice."
+      );
+      return;
+    }
+
     if (!cashierId || !selectedCashier) {
       alert("Select a cashier.");
       return;
@@ -816,6 +849,7 @@ function POS({ activeBranch, branchId: activeBranchId, branches: appBranches = [
           .from("invoices")
           .select("public_share_token")
           .eq("invoice_number", result.invoice_number)
+          .eq("branch_id", branchId)
           .maybeSingle();
 
         if (shareError) {
@@ -891,7 +925,14 @@ function POS({ activeBranch, branchId: activeBranchId, branches: appBranches = [
                 ? "active"
                 : ""
             }
+            disabled={!branchCanIssueVat}
+            title={
+              branchCanIssueVat
+                ? "Create VAT Invoice"
+                : "This branch is not VAT registered. Only Non-VAT invoices can be created."
+            }
             onClick={() => {
+              if (!branchCanIssueVat) return;
               setInvoiceType("VAT");
               setCustomerId("");
             }}
@@ -913,6 +954,19 @@ function POS({ activeBranch, branchId: activeBranchId, branches: appBranches = [
             Non-VAT Invoice
           </button>
         </div>
+
+        {branchId && selectedBranch && !branchCanIssueVat && (
+          <div
+            style={{
+              marginTop: "8px",
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "#9a3412",
+            }}
+          >
+            This branch is not VAT registered. Only Non-VAT invoices can be created.
+          </div>
+        )}
 
       </div>
 

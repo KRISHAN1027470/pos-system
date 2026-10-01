@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Search,
   Eye,
@@ -998,11 +999,175 @@ function Invoices({
   }
 
   function printCreditNote() {
-    document.body.classList.add("printing-credit-note");
-    window.print();
-    setTimeout(() => {
-      document.body.classList.remove("printing-credit-note");
-    }, 500);
+    const creditNoteNode = document.getElementById("credit-note-print");
+
+    if (!creditNoteNode) {
+      alert("Credit note is not ready to print.");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=1000,height=900");
+
+    if (!printWindow) {
+      alert("Please allow pop-ups to print the credit note.");
+      return;
+    }
+
+    const creditNoteCss = `
+      @page { size: A4 portrait; margin: 8mm; }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+        color: #000 !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+      }
+      #credit-note-print {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+      }
+      .vat-credit-note-doc {
+        display: block !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+        font-family: Arial, sans-serif !important;
+      }
+      .vat-credit-note-doc .reprint-tax-title {
+        width: 200px;
+        margin: 8px auto 12px !important;
+        border: 1px solid #000;
+        text-align: center;
+        font-size: 21px;
+        font-weight: 800;
+        padding: 10px 6px;
+        white-space: nowrap;
+      }
+      .vat-credit-note-doc .reprint-tax-party-grid {
+        display: grid;
+        grid-template-columns: 50% 50%;
+        width: 100%;
+        border: 1px solid #000;
+        font-size: 15px;
+      }
+      .vat-credit-note-doc .reprint-tax-cell {
+        padding: 7px 11px;
+        min-height: 32px;
+      }
+      .vat-credit-note-doc .reprint-tax-cell:nth-child(odd) { border-right: 1px solid #000; }
+      .vat-credit-note-doc .reprint-tax-cell:nth-child(-n+4) { border-bottom: 1px solid #000; }
+      .vat-credit-note-doc .reprint-tax-party {
+        line-height: 1.9;
+        min-height: 105px;
+        padding-top: 8px;
+      }
+      .vat-credit-note-doc .reprint-tax-items {
+        width: 100%;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        table-layout: fixed;
+        margin-top: 12px;
+        font-size: 11px;
+        border: 1px solid #000 !important;
+      }
+      .vat-credit-note-doc .reprint-tax-items th,
+      .vat-credit-note-doc .reprint-tax-items td {
+        border: 1px solid #000 !important;
+        padding: 7px 5px;
+        vertical-align: middle;
+      }
+      .vat-credit-note-doc .reprint-tax-items th {
+        text-align: center;
+        background: #f3f3f3;
+        font-weight: 800;
+      }
+      .vat-credit-note-doc .reprint-tax-items th:nth-child(1) { width: 12%; }
+      .vat-credit-note-doc .reprint-tax-items th:nth-child(2) { width: 44%; }
+      .vat-credit-note-doc .reprint-tax-items th:nth-child(3) { width: 12%; }
+      .vat-credit-note-doc .reprint-tax-items th:nth-child(4) { width: 14%; }
+      .vat-credit-note-doc .reprint-tax-items th:nth-child(5) { width: 18%; }
+      .vat-credit-note-doc .reprint-tax-items small {
+        display: block;
+        font-size: 9px;
+        margin-top: 2px;
+      }
+      .reprint-tax-center { text-align: center; }
+      .reprint-tax-right { text-align: right; }
+      .reprint-tax-total-row td:first-child { text-align: right; font-weight: 700; }
+      .reprint-tax-strong td { font-weight: 900; }
+      .reprint-tax-meta {
+        margin-top: 10px;
+        border: 1px solid #000;
+        padding: 8px 10px;
+        font-size: 9px;
+        line-height: 1.7;
+      }
+      .reprint-tax-footer {
+        text-align: center;
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid #000;
+        font-size: 9px;
+        white-space: pre-wrap;
+      }
+      .credit-note-header { display:flex; justify-content:space-between; gap:24px; padding-bottom:14px; border-bottom:2px solid #0f172a; }
+      .credit-note-header h1, .credit-note-header h2, .credit-note-header p { margin:0 0 4px; }
+      .credit-note-header > div:last-child { text-align:right; }
+      .credit-note-info { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:15px 0; }
+      .credit-note-info > div, .credit-note-reason { border:1px solid #e2e8f0; border-radius:8px; padding:9px 10px; }
+      .credit-note-info strong, .credit-note-reason strong { display:block; margin-top:3px; }
+      .credit-note-table { width:100%; border-collapse:collapse; margin-top:12px; }
+      .credit-note-table th, .credit-note-table td { padding:9px; border-bottom:1px solid #e2e8f0; text-align:left; }
+      .credit-note-table th { background:#f8fafc; font-size:11px; text-transform:uppercase; }
+      .credit-note-table td span { display:block; margin-top:2px; color:#64748b; font-size:10px; }
+      .credit-note-total { width:min(330px,100%); margin:18px 0 0 auto; display:flex; justify-content:space-between; border-top:2px solid #0f172a; border-bottom:2px solid #0f172a; padding:11px 0; font-size:16px; font-weight:900; }
+      .credit-note-reason { margin-top:18px; }
+      .credit-note-footer { margin-top:22px; padding-top:12px; border-top:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:11px; }
+      table, tr, td, th, .reprint-tax-party-grid, .reprint-tax-meta {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Credit Note - ${selectedReturn?.return_number || selectedInvoice?.invoice_number || ""}</title>
+          <style>${creditNoteCss}</style>
+        </head>
+        <body>${creditNoteNode.outerHTML}</body>
+      </html>
+    `);
+    printWindow.document.close();
+
+    printWindow.addEventListener("load", () => {
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 150);
+    });
+
+    printWindow.addEventListener("afterprint", () => {
+      printWindow.close();
+    });
   }
 
   function formatMoney(value) {
@@ -1034,10 +1199,15 @@ function Invoices({
     const isVat =
       String(selectedInvoice?.invoice_type || "").toUpperCase() === "VAT";
 
-    // NON-VAT reprint: open the SAME PublicInvoice route used by POS.
-    // Do this before creating the VAT print window; otherwise Chrome leaves
-    // the first about:blank window open and can block the second popup.
-    if (!isVat && selectedInvoice?.id) {
+    // NON-VAT reprint, including CANCELLED invoices:
+    // open the SAME PublicInvoice route used by POS. PublicInvoice reads the
+    // invoice status from the database, so a cancelled invoice prints with its
+    // original details and CANCELLED status without changing any data.
+    if (
+      !isVat &&
+      selectedInvoice?.id &&
+      String(selectedInvoice?.status || "").toUpperCase() !== "CANCELLED"
+    ) {
       const publicInvoiceUrl =
         `${window.location.origin}/invoice/${encodeURIComponent(selectedInvoice.id)}?print=1`;
       window.open(publicInvoiceUrl, "_blank");
@@ -1099,9 +1269,18 @@ function Invoices({
             ${invoiceEmail ? `<p>Email: ${escapePrintHtml(invoiceEmail)}</p>` : ""}
           </div>
           <div class="normal-title">
-            <h2>INVOICE</h2>
-            <div class="invoice-no">${escapePrintHtml(selectedInvoice?.invoice_number || "")}</div>
+            <h2>${String(selectedInvoice?.status || "").toUpperCase() === "CANCELLED" ? "CREDIT NOTE" : "INVOICE"}</h2>
+            <div class="invoice-no">${
+              String(selectedInvoice?.status || "").toUpperCase() === "CANCELLED"
+                ? `CN-${escapePrintHtml(selectedInvoice?.invoice_number || "")}`
+                : escapePrintHtml(selectedInvoice?.invoice_number || "")
+            }</div>
             <div class="status">${escapePrintHtml(selectedInvoice?.status || paymentStatus(selectedInvoice))}</div>
+            ${
+              String(selectedInvoice?.status || "").toUpperCase() === "CANCELLED"
+                ? `<div class="original-invoice">Original Invoice: ${escapePrintHtml(selectedInvoice?.invoice_number || "")}</div>`
+                : ""
+            }
           </div>
         </section>
 
@@ -1121,12 +1300,17 @@ function Invoices({
         <section class="totals">
           <div><span>Subtotal</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice?.subtotal)}</strong></div>
           ${Number(selectedInvoice?.discount || 0) > 0 ? `<div><span>Discount</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice.discount)}</strong></div>` : ""}
-          <div class="grand"><span>Invoice Total</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice?.total)}</strong></div>
+          <div class="grand"><span>${String(selectedInvoice?.status || "").toUpperCase() === "CANCELLED" ? "Total Credit" : "Invoice Total"}</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice?.total)}</strong></div>
           ${isCash ? `<div><span>Received Amount</span><strong>${escapePrintHtml(currency)} ${formatMoney(receivedAmount)}</strong></div>` : ""}
           <div><span>Paid</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice?.paid_amount)}</strong></div>
           ${isCash && Number(changeAmount) > 0 ? `<div><span>Change</span><strong>${escapePrintHtml(currency)} ${formatMoney(changeAmount)}</strong></div>` : ""}
           <div><span>Due</span><strong>${escapePrintHtml(currency)} ${formatMoney(selectedInvoice?.due_amount)}</strong></div>
         </section>
+        ${
+          String(selectedInvoice?.status || "").toUpperCase() === "CANCELLED"
+            ? `<div class="cancel-note"><strong>FULL INVOICE CANCELLED</strong><br/>Credit note issued against original invoice ${escapePrintHtml(selectedInvoice?.invoice_number || "")}.</div>`
+            : ""
+        }
         ${receiptFooter ? `<footer>${escapePrintHtml(receiptFooter)}</footer>` : ""}
       </main>`;
 
@@ -1787,6 +1971,37 @@ function Invoices({
                   <Printer size={17} />
                   Print
                 </button>
+
+                {(invoiceReturnTotals[selectedInvoice.id]?.returns || []).length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const returns = invoiceReturnTotals[selectedInvoice.id]?.returns || [];
+                      if (returns.length === 1) {
+                        openCreditNote(returns[0]);
+                      } else {
+                        openCombinedCreditNote();
+                      }
+                    }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "7px",
+                      minHeight: "38px",
+                      padding: "8px 12px",
+                      border: "1px solid #dbe3ee",
+                      borderRadius: "8px",
+                      background: "#ffffff",
+                      color: "#111827",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      opacity: 1,
+                    }}
+                  >
+                    <Printer size={17} />
+                    Print Credit Note
+                  </button>
+                )}
 
                 {selectedInvoice.status === "COMPLETED" && (
                   <button
@@ -2520,10 +2735,10 @@ function Invoices({
         </div>
       )}
 
-      {selectedReturn && selectedInvoice && (
+      {selectedReturn && selectedInvoice && createPortal(
         <div className="credit-note-overlay">
           <div className="credit-note-modal">
-            <div className="credit-note-actions no-print">
+            <div className="credit-note-actions">
               <button type="button" onClick={printCreditNote}>
                 <Printer size={17} />
                 Print Credit Note
@@ -2534,89 +2749,303 @@ function Invoices({
             </div>
 
             <div className="credit-note-print" id="credit-note-print">
-              <div className="credit-note-header">
-                <div>
-                  <h1>{selectedBranch?.branch_name || companyName}</h1>
-                  {invoiceAddress && <p>{invoiceAddress}</p>}
-                  {(invoicePhone || invoiceEmail) && (
-                    <p>{[invoicePhone, invoiceEmail].filter(Boolean).join(" • ")}</p>
+              {String(selectedInvoice?.invoice_type || "").toUpperCase() === "VAT" ? (
+                (() => {
+                  const vatRate =
+                    Number(
+                      invoiceItems.find((item) => Number(item?.vat_rate || 0) > 0)?.vat_rate
+                    ) ||
+                    (Number(selectedInvoice?.taxable_amount || 0) > 0
+                      ? (Number(selectedInvoice?.vat_amount || 0) /
+                          Number(selectedInvoice?.taxable_amount || 1)) *
+                        100
+                      : 18);
+
+                  const creditTotal = Number(selectedReturn?.return_amount || 0);
+                  const creditSupply =
+                    vatRate > 0 ? creditTotal / (1 + vatRate / 100) : creditTotal;
+                  const creditVat = Math.max(creditTotal - creditSupply, 0);
+
+                  const supplierTin =
+                    selectedBranch?.vat_number ||
+                    selectedCompany?.vat_number ||
+                    printSettings?.company_vat_number ||
+                    "-";
+
+                  const supplierName =
+                    selectedCompany?.business_name ||
+                    selectedCompany?.company_name ||
+                    printSettings?.company_name ||
+                    selectedBranch?.branch_name ||
+                    "-";
+
+                  const supplierAddress =
+                    selectedBranch?.address ||
+                    selectedCompany?.address ||
+                    printSettings?.company_address ||
+                    "-";
+
+                  const supplierPhone =
+                    selectedBranch?.phone ||
+                    selectedCompany?.phone ||
+                    printSettings?.company_phone ||
+                    "-";
+
+                  const purchaserTin =
+                    selectedInvoice?.customer_vat_number ||
+                    selectedInvoice?.customer_tin ||
+                    "-";
+
+                  const purchaserName =
+                    selectedInvoice?.customer_name || "Walk-in Customer";
+
+                  const purchaserAddress =
+                    selectedCustomer?.address ||
+                    selectedInvoice?.customer_address ||
+                    "-";
+
+                  const purchaserPhone =
+                    selectedCustomer?.phone ||
+                    selectedInvoice?.customer_phone ||
+                    "-";
+
+                  const creditDate = selectedReturn?.processed_at || new Date().toISOString();
+                  const formatTaxDate = (value) =>
+                    value ? new Date(value).toLocaleDateString("en-GB") : "-";
+
+                  return (
+                    <div className="reprint-tax-doc vat-credit-note-doc">
+                      <div className="reprint-tax-title">Credit Note</div>
+
+                      <div className="reprint-tax-party-grid">
+                        <div className="reprint-tax-cell">
+                          <b>Date of Credit Note:</b> {formatTaxDate(creditDate)}
+                        </div>
+
+                        <div className="reprint-tax-cell">
+                          <b>Credit Note No.:</b> {selectedReturn?.return_number || "-"}
+                          <br />
+                          <b>Original Tax Invoice No.:</b>{" "}
+                          {selectedInvoice?.invoice_number || "-"}
+                        </div>
+
+                        <div className="reprint-tax-cell reprint-tax-party">
+                          <div><b>Supplier&apos;s TIN:</b> {supplierTin}</div>
+                          <div><b>Supplier&apos;s Name:</b> {supplierName}</div>
+                          <div><b>Address:</b> {supplierAddress}</div>
+                          <div><b>Telephone No:</b> {supplierPhone}</div>
+                        </div>
+
+                        <div className="reprint-tax-cell reprint-tax-party">
+                          <div><b>Purchaser&apos;s TIN:</b> {purchaserTin}</div>
+                          <div><b>Purchaser&apos;s Name:</b> {purchaserName}</div>
+                          <div><b>Address:</b> {purchaserAddress}</div>
+                          <div><b>Telephone No:</b> {purchaserPhone}</div>
+                        </div>
+
+                        <div className="reprint-tax-cell">
+                          <b>Return Date:</b> {formatTaxDate(creditDate)}
+                        </div>
+
+                        <div className="reprint-tax-cell">
+                          <b>Place of Supply:</b>{" "}
+                          {selectedBranch?.branch_name || selectedBranch?.address || "-"}
+                        </div>
+                      </div>
+
+                      <table className="reprint-tax-items">
+                        <thead>
+                          <tr>
+                            <th>Reference</th>
+                            <th>Description of Goods or Services</th>
+                            <th>Qty Returned</th>
+                            <th>Unit Price</th>
+                            <th>
+                              Credit Amount
+                              <br />
+                              Excluding VAT
+                              <br />
+                              ({currency})
+                            </th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {selectedReturnItems.map((item, index) => {
+                            const originalItem = invoiceItems.find(
+                              (x) => x.id === item.invoice_item_id
+                            );
+                            const lineCredit = Number(item?.return_amount || 0);
+                            const lineExVat =
+                              vatRate > 0
+                                ? lineCredit / (1 + vatRate / 100)
+                                : lineCredit;
+
+                            return (
+                              <tr key={item?.id || index}>
+                                <td>{String(index + 1).padStart(2, "0")}</td>
+                                <td>
+                                  {originalItem?.item_name || "Item"}
+                                  {originalItem?.sku && <small>{originalItem.sku}</small>}
+                                </td>
+                                <td className="reprint-tax-center">
+                                  {Number(item?.quantity || 0)}
+                                </td>
+                                <td className="reprint-tax-right">
+                                  {currency} {formatMoney(item?.unit_price)}
+                                </td>
+                                <td className="reprint-tax-right">
+                                  {currency} {formatMoney(lineExVat)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+
+                          <tr className="reprint-tax-total-row">
+                            <td colSpan="4">Total Credit Value of Supply:</td>
+                            <td className="reprint-tax-right">
+                              {currency} {formatMoney(creditSupply)}
+                            </td>
+                          </tr>
+
+                          <tr className="reprint-tax-total-row">
+                            <td colSpan="4">
+                              VAT Amount (Credit Value of Supply @ {formatMoney(vatRate).replace(".00", "")}%):
+                            </td>
+                            <td className="reprint-tax-right">
+                              {currency} {formatMoney(creditVat)}
+                            </td>
+                          </tr>
+
+                          <tr className="reprint-tax-total-row reprint-tax-strong">
+                            <td colSpan="4">Total Credit Amount including VAT:</td>
+                            <td className="reprint-tax-right">
+                              {currency} {formatMoney(creditTotal)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div className="reprint-tax-meta">
+                        <div>
+                          <b>Original Tax Invoice:</b>{" "}
+                          {selectedInvoice?.invoice_number || "-"}
+                        </div>
+                        <div>
+                          <b>Credit Note:</b> {selectedReturn?.return_number || "-"}
+                        </div>
+                        {selectedReturn?.reason && (
+                          <div>
+                            <b>Reason:</b> {selectedReturn.reason}
+                          </div>
+                        )}
+                      </div>
+
+                      {selectedDocumentPrintSettings?.show_footer !== false &&
+                        String(selectedDocumentPrintSettings?.footer_text || "").trim() && (
+                          <div
+                            className="reprint-tax-footer"
+                            style={{
+                              fontSize: Number(
+                                selectedDocumentPrintSettings?.footer_font_size || 9
+                              ),
+                              whiteSpace: "pre-wrap",
+                            }}
+                          >
+                            {selectedDocumentPrintSettings.footer_text}
+                          </div>
+                        )}
+                    </div>
+                  );
+                })()
+              ) : (
+                <>
+                  <div className="credit-note-header">
+                    <div>
+                      <h1>{selectedBranch?.branch_name || companyName}</h1>
+                      {invoiceAddress && <p>{invoiceAddress}</p>}
+                      {(invoicePhone || invoiceEmail) && (
+                        <p>{[invoicePhone, invoiceEmail].filter(Boolean).join(" • ")}</p>
+                      )}
+                    </div>
+                    <div>
+                      <h2>CREDIT NOTE</h2>
+                      <strong>{selectedReturn.return_number}</strong>
+                    </div>
+                  </div>
+
+                  <div className="credit-note-info">
+                    <div>
+                      <span>Original Invoice</span>
+                      <strong>{selectedInvoice.invoice_number}</strong>
+                    </div>
+                    <div>
+                      <span>Return Date</span>
+                      <strong>{formatDate(selectedReturn.processed_at)}</strong>
+                    </div>
+                    <div>
+                      <span>Customer</span>
+                      <strong>{selectedInvoice.customer_name || "Walk-in Customer"}</strong>
+                    </div>
+                    <div>
+                      <span>Branch</span>
+                      <strong>{selectedBranch?.branch_name || "-"}</strong>
+                    </div>
+                  </div>
+
+                  <table className="credit-note-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Item</th>
+                        <th>Qty Returned</th>
+                        <th>Unit Price</th>
+                        <th>Credit Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedReturnItems.map((item, index) => (
+                        <tr key={item.id}>
+                          <td>{index + 1}</td>
+                          <td>
+                            <strong>
+                              {invoiceItems.find((x) => x.id === item.invoice_item_id)?.item_name || "Item"}
+                            </strong>
+                            <span>
+                              {invoiceItems.find((x) => x.id === item.invoice_item_id)?.sku || ""}
+                            </span>
+                          </td>
+                          <td>{item.quantity}</td>
+                          <td>{currency} {formatMoney(item.unit_price)}</td>
+                          <td>
+                            <strong>{currency} {formatMoney(item.return_amount)}</strong>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <div className="credit-note-total">
+                    <span>TOTAL CREDIT</span>
+                    <strong>{currency} {formatMoney(selectedReturn.return_amount)}</strong>
+                  </div>
+
+                  {selectedReturn.reason && (
+                    <div className="credit-note-reason">
+                      <span>Reason</span>
+                      <strong>{selectedReturn.reason}</strong>
+                    </div>
                   )}
-                </div>
-                <div>
-                  <h2>CREDIT NOTE</h2>
-                  <strong>{selectedReturn.return_number}</strong>
-                </div>
-              </div>
 
-              <div className="credit-note-info">
-                <div>
-                  <span>Original Invoice</span>
-                  <strong>{selectedInvoice.invoice_number}</strong>
-                </div>
-                <div>
-                  <span>Return Date</span>
-                  <strong>{formatDate(selectedReturn.processed_at)}</strong>
-                </div>
-                <div>
-                  <span>Customer</span>
-                  <strong>{selectedInvoice.customer_name || "Walk-in Customer"}</strong>
-                </div>
-                <div>
-                  <span>Branch</span>
-                  <strong>{selectedBranch?.branch_name || "-"}</strong>
-                </div>
-              </div>
-
-              <table className="credit-note-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Item</th>
-                    <th>Qty Returned</th>
-                    <th>Unit Price</th>
-                    <th>Credit Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedReturnItems.map((item, index) => (
-                    <tr key={item.id}>
-                      <td>{index + 1}</td>
-                      <td>
-                        <strong>
-                          {invoiceItems.find((x) => x.id === item.invoice_item_id)?.item_name || "Item"}
-                        </strong>
-                        <span>
-                          {invoiceItems.find((x) => x.id === item.invoice_item_id)?.sku || ""}
-                        </span>
-                      </td>
-                      <td>{item.quantity}</td>
-                      <td>{currency} {formatMoney(item.unit_price)}</td>
-                      <td>
-                        <strong>{currency} {formatMoney(item.return_amount)}</strong>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="credit-note-total">
-                <span>TOTAL CREDIT</span>
-                <strong>{currency} {formatMoney(selectedReturn.return_amount)}</strong>
-              </div>
-
-              {selectedReturn.reason && (
-                <div className="credit-note-reason">
-                  <span>Reason</span>
-                  <strong>{selectedReturn.reason}</strong>
-                </div>
+                  <div className="credit-note-footer">
+                    This credit note relates to original invoice {selectedInvoice.invoice_number}.
+                  </div>
+                </>
               )}
-
-              <div className="credit-note-footer">
-                This credit note relates to original invoice {selectedInvoice.invoice_number}.
-              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <style>{`
@@ -2975,32 +3404,93 @@ function Invoices({
         .credit-note-overlay {
           position: fixed;
           inset: 0;
-          z-index: 11000;
+          z-index: 2147483000;
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: center;
-          padding: 20px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 18px 20px;
           background: rgba(15, 23, 42, .6);
         }
 
         .credit-note-modal {
-          width: min(850px, 96vw);
-          max-height: 94vh;
-          overflow: auto;
+          width: min(850px, calc(100vw - 40px));
+          max-height: calc(100vh - 36px);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          flex: 0 0 auto;
+          margin: 0 auto;
           border-radius: 14px;
           background: #fff;
-          padding: 22px;
+          padding: 0;
           box-shadow: 0 24px 70px rgba(15, 23, 42, .25);
         }
 
+        .credit-note-fixed-close {
+          position: sticky;
+          top: 10px;
+          z-index: 9999;
+          float: right;
+          width: 42px;
+          height: 42px;
+          margin: -10px -10px 0 10px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #cbd5e1;
+          border-radius: 10px;
+          background: #ffffff;
+          color: #111827;
+          box-shadow: 0 3px 12px rgba(15, 23, 42, .15);
+          cursor: pointer;
+        }
+
+        .credit-note-fixed-close:hover {
+          background: #f8fafc;
+        }
+
         .credit-note-actions {
+          position: relative;
+          z-index: 100;
+          flex: 0 0 auto;
           display: flex;
           justify-content: flex-end;
           gap: 8px;
-          margin-bottom: 16px;
+          margin: 0;
+          padding: 12px 14px;
+          background: #ffffff;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .credit-note-actions button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          min-height: 38px;
+          padding: 8px 12px;
+          border: 1px solid #dbe3ee;
+          border-radius: 8px;
+          background: #fff;
+          color: #111827;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .credit-note-actions button:last-child {
+          width: 38px;
+          padding: 0;
+          flex: 0 0 38px;
         }
 
         .credit-note-print {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+          overflow-x: auto;
+          padding: 22px;
           color: #0f172a;
           background: #fff;
         }
@@ -3094,6 +3584,107 @@ function Invoices({
           font-size: 11px;
         }
 
+        .vat-credit-note-doc {
+          width: 100%;
+          max-width: 900px;
+          margin: 0 auto;
+          background: #fff;
+          color: #000;
+          font-family: Arial, sans-serif;
+        }
+
+        .vat-credit-note-doc .reprint-tax-title {
+          width: 200px;
+          margin: 8px auto 12px;
+          border: 1px solid #000;
+          text-align: center;
+          font-size: 21px;
+          font-weight: 800;
+          padding: 10px 6px;
+          white-space: nowrap;
+        }
+
+        .vat-credit-note-doc .reprint-tax-party-grid {
+          display: grid;
+          grid-template-columns: 50% 50%;
+          width: 100%;
+          border: 1px solid #000;
+          font-size: 15px;
+        }
+
+        .vat-credit-note-doc .reprint-tax-cell {
+          padding: 7px 11px;
+          min-height: 32px;
+        }
+
+        .vat-credit-note-doc .reprint-tax-cell:nth-child(odd) {
+          border-right: 1px solid #000;
+        }
+
+        .vat-credit-note-doc .reprint-tax-cell:nth-child(-n+4) {
+          border-bottom: 1px solid #000;
+        }
+
+        .vat-credit-note-doc .reprint-tax-party {
+          line-height: 1.9;
+          min-height: 105px;
+          padding-top: 8px;
+        }
+
+        .vat-credit-note-doc .reprint-tax-items {
+          width: 100%;
+          border-collapse: collapse;
+          table-layout: fixed;
+          margin-top: 12px;
+          font-size: 11px;
+          border: 1px solid #000;
+        }
+
+        .vat-credit-note-doc .reprint-tax-items th,
+        .vat-credit-note-doc .reprint-tax-items td {
+          border: 1px solid #000;
+          padding: 7px 5px;
+          vertical-align: middle;
+        }
+
+        .vat-credit-note-doc .reprint-tax-items th {
+          text-align: center;
+          background: #f3f3f3;
+          font-weight: 800;
+        }
+
+        .vat-credit-note-doc .reprint-tax-items th:nth-child(1) { width: 12%; }
+        .vat-credit-note-doc .reprint-tax-items th:nth-child(2) { width: 44%; }
+        .vat-credit-note-doc .reprint-tax-items th:nth-child(3) { width: 12%; }
+        .vat-credit-note-doc .reprint-tax-items th:nth-child(4) { width: 14%; }
+        .vat-credit-note-doc .reprint-tax-items th:nth-child(5) { width: 18%; }
+
+        .vat-credit-note-doc .reprint-tax-items small {
+          display: block;
+          font-size: 9px;
+          margin-top: 2px;
+        }
+
+        .vat-credit-note-doc .reprint-tax-center { text-align: center; }
+        .vat-credit-note-doc .reprint-tax-right { text-align: right; }
+
+        .vat-credit-note-doc .reprint-tax-total-row td:first-child {
+          text-align: right;
+          font-weight: 700;
+        }
+
+        .vat-credit-note-doc .reprint-tax-strong td {
+          font-weight: 900;
+        }
+
+        .vat-credit-note-doc .reprint-tax-meta {
+          margin-top: 10px;
+          border: 1px solid #000;
+          padding: 8px 10px;
+          font-size: 9px;
+          line-height: 1.7;
+        }
+
         @media print {
           .invoice-return-overlay {
             display: none !important;
@@ -3125,8 +3716,23 @@ function Invoices({
 
           body.printing-credit-note .credit-note-print {
             display: block !important;
+            overflow: visible !important;
+            padding: 0 !important;
           }
 
+          body.printing-credit-note .vat-credit-note-doc {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+            color: #000 !important;
+          }
+
+          body.printing-credit-note .vat-credit-note-doc .reprint-tax-title {
+            margin-top: 8px !important;
+          }
+
+          body.printing-credit-note .credit-note-actions,
           body.printing-credit-note .no-print {
             display: none !important;
           }

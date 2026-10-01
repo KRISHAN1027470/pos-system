@@ -194,7 +194,7 @@ export default function Login() {
             <div className="showcase-brand primepos-code-brand">
               <div className="primepos-code-mark" aria-hidden="true">P</div>
               <div className="primepos-code-copy">
-                <strong className="primepos-code-name"><span>Point of Sales</span></strong>
+                <strong className="primepos-code-name"><span>PRIME POS</span></strong>
                 <span className="primepos-code-subtitle">Business Management Suite</span>
               </div>
             </div>

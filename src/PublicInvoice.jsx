@@ -239,6 +239,11 @@ export default function PublicInvoice({ token }) {
   const { invoice, branch, settings, items = [] } = data;
   const currency = settings?.currency_symbol || "Rs.";
   const companyName = settings?.company_name || branch?.branch_name || "Invoice";
+  const nonVatPs = documentPrintSettings || {};
+  const nv = (value, fallback) => {
+    const x = Number(value);
+    return Number.isFinite(x) && x >= 0 ? x : fallback;
+  };
 
   if (String(invoice.invoice_type || "").toUpperCase() === "VAT") {
     return (
@@ -258,249 +263,122 @@ export default function PublicInvoice({ token }) {
 
   return (
     <div className="public-invoice-page" style={pageStyle}>
-      <div className="public-invoice-card" style={invoiceCardStyle}>
+      <div
+        className="public-invoice-card"
+        style={{ ...invoiceCardStyle, padding: nv(nonVatPs.document_padding, 28) }}
+      >
         <div className="public-no-print" style={toolbarStyle}>
           <div>
             <strong>{invoice.invoice_number}</strong>
-            <span style={{ display: "block", color: "#64748b", fontSize: 12 }}>
-              Customer copy
-            </span>
+            <span style={{ display: "block", color: "#64748b", fontSize: 12 }}>Customer copy</span>
           </div>
-
           <button onClick={() => window.print()} style={printButtonStyle}>
-            <Printer size={17} />
-            Print / Save PDF
+            <Printer size={17} /> Print / Save PDF
           </button>
         </div>
 
-        <div style={headerStyle}>
-          <div>
-            {documentPrintSettings?.show_logo !== false &&
-              documentPrintSettings?.logo_url && (
-              <img
-                src={documentPrintSettings.logo_url}
-                alt={`${companyName} logo`}
-                style={{
-                  maxWidth: 180,
-                  maxHeight: 72,
-                  objectFit: "contain",
-                  display: "block",
-                  marginBottom: 10,
-                }}
-              />
+        <header className="nv-header">
+          <div className="nv-company">
+            {documentPrintSettings?.show_logo !== false && documentPrintSettings?.logo_url && (
+              <img src={documentPrintSettings.logo_url} alt={`${companyName} logo`} className="nv-logo" />
             )}
-
-            {branch?.branch_name && (
-              <h1 style={{ margin: "0 0 7px", fontSize: 30, fontWeight: 900 }}>
-                {branch.branch_name}
-              </h1>
-            )}
-
-            {settings?.receipt_show_branch_address !== false && branch?.address && (
-              <p style={smallTextStyle}>{branch.address}</p>
-            )}
-
-            {settings?.receipt_show_branch_phone !== false && branch?.phone && (
-              <p style={smallTextStyle}>Tel: {branch.phone}</p>
-            )}
-
-            {branch?.email && (
-              <p style={smallTextStyle}>Email: {branch.email}</p>
-            )}
-          </div>
-
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 22, fontWeight: 900 }}>
-              {invoice.invoice_type === "VAT" ? "VAT INVOICE" : "INVOICE"}
-            </div>
-            <div style={{ fontWeight: 800, marginTop: 5 }}>
-              {invoice.invoice_number}
-            </div>
-            <div style={{ marginTop: 6, fontSize: 13, fontWeight: 800 }}>
-              {invoice.status}
+            <div>
+              <h1>{branch?.branch_name || companyName}</h1>
+              {nonVatPs.show_address !== false && settings?.receipt_show_branch_address !== false && branch?.address && <p>{branch.address}</p>}
+              <div className="nv-contact">
+                {nonVatPs.show_telephone !== false && settings?.receipt_show_branch_phone !== false && branch?.phone && <span><b>Tel:</b> {branch.phone}</span>}
+                {branch?.email && <span><b>Email:</b> {branch.email}</span>}
+                {nonVatPs.show_tin !== false && branch?.vat_number && <span><b>TIN / VAT:</b> {branch.vat_number}</span>}
+              </div>
             </div>
           </div>
-        </div>
+          <div className="nv-document">
+            <div className="nv-doc-title">INVOICE</div>
+            <div className="nv-doc-number">{invoice.invoice_number}</div>
+            <div className="nv-status">{invoice.status}</div>
+          </div>
+        </header>
 
-        <div style={infoGridStyle}>
-          <Info label="Date" value={date(invoice.invoice_date)} />
-          <Info
-            label="Branch"
-            value={
-              branch
-                ? `${branch.branch_code || ""}${branch.branch_code ? " - " : ""}${branch.branch_name || ""}`
-                : "-"
-            }
-          />
-          <Info label="Customer" value={invoice.customer_name || "Walk-in Customer"} />
-          <Info label="Cashier" value={cashierName || "-"} />
-          <Info label="Payment" value={invoice.payment_method || "Credit"} />
-        </div>
+        <section className="nv-meta">
+          <Info label="Invoice Date" value={date(invoice.invoice_date)} fontSize={nv(nonVatPs.party_font_size, 13)} />
+          {nonVatPs.show_branch !== false && <Info label="Branch" value={branch ? `${branch.branch_code || ""}${branch.branch_code ? " - " : ""}${branch.branch_name || ""}` : "-"} fontSize={nv(nonVatPs.party_font_size, 13)} />}
+          <Info label="Customer" value={invoice.customer_name || "Walk-in Customer"} fontSize={nv(nonVatPs.party_font_size, 13)} />
+          {nonVatPs.show_cashier !== false && <Info label="Cashier" value={cashierName || "-"} fontSize={nv(nonVatPs.party_font_size, 13)} />}
+          {nonVatPs.show_payment_method !== false && <Info label="Payment Method" value={invoice.payment_method || "Credit"} fontSize={nv(nonVatPs.party_font_size, 13)} />}
+        </section>
 
-        <div style={{ overflowX: "auto" }}>
+        <div className="nv-table-wrap">
           <table style={tableStyle}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Item</th>
-                <th style={thStyle}>Qty</th>
-                <th style={thStyle}>Price</th>
-                <th style={thStyle}>Total</th>
+            <thead><tr>
+              <th style={{ ...thStyle, padding: nv(nonVatPs.table_cell_padding, 9), fontSize: nv(nonVatPs.table_header_font_size, 12) }}>Item Description</th>
+              <th style={{ ...thStyle, padding: nv(nonVatPs.table_cell_padding, 9), fontSize: nv(nonVatPs.table_header_font_size, 12), textAlign: "center" }}>Qty</th>
+              <th style={{ ...thStyle, padding: nv(nonVatPs.table_cell_padding, 9), fontSize: nv(nonVatPs.table_header_font_size, 12), textAlign: "right" }}>Unit Price</th>
+              <th style={{ ...thStyle, padding: nv(nonVatPs.table_cell_padding, 9), fontSize: nv(nonVatPs.table_header_font_size, 12), textAlign: "right" }}>Amount</th>
+            </tr></thead>
+            <tbody>{items.map((item) => (
+              <tr key={item.id}>
+                <td style={{ ...tdStyle, padding: nv(nonVatPs.table_cell_padding, 9), fontSize: nv(nonVatPs.item_font_size, 13) }}><strong>{item.item_name}</strong>{item.sku && <span className="nv-sku">{item.sku}</span>}</td>
+                <td style={{ ...tdStyle, padding: nv(nonVatPs.table_cell_padding, 9), fontSize: nv(nonVatPs.item_font_size, 13), textAlign: "center" }}>{item.quantity}</td>
+                <td style={{ ...tdStyle, padding: nv(nonVatPs.table_cell_padding, 9), fontSize: nv(nonVatPs.item_font_size, 13), textAlign: "right" }}>{currency} {money(item.unit_price)}</td>
+                <td style={{ ...tdStyle, padding: nv(nonVatPs.table_cell_padding, 9), fontSize: nv(nonVatPs.item_font_size, 13), textAlign: "right", fontWeight: 800 }}>{currency} {money(item.line_total)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id}>
-                  <td style={tdStyle}>
-                    <strong>{item.item_name}</strong>
-                    {item.sku && (
-                      <span style={{ display: "block", color: "#64748b", fontSize: 15 }}>
-                        {item.sku}
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: "right" }}>{item.quantity}</td>
-                  <td style={{ ...tdStyle, textAlign: "right" }}>
-                    {currency} {money(item.unit_price)}
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: "right", fontWeight: 800 }}>
-                    {currency} {money(item.line_total)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+            ))}</tbody>
           </table>
         </div>
 
-        <div style={summaryWrapStyle}>
-          <Summary label="Subtotal" value={`${currency} ${money(invoice.subtotal)}`} />
-          {Number(invoice.discount || 0) > 0 && (
-            <Summary label="Discount" value={`${currency} ${money(invoice.discount)}`} />
-          )}
-          {invoice.invoice_type === "VAT" && (
-            <Summary label="VAT" value={`${currency} ${money(invoice.vat_amount)}`} />
-          )}
-          <Summary
-            label="Invoice Total"
-            value={`${currency} ${money(invoice.total)}`}
-            strong
-          />
-          {String(invoice.payment_method || "").toUpperCase() === "CASH" && (
-            <Summary
-              label="Received Amount"
-              value={`${currency} ${money(invoice.received_amount ?? invoice.paid_amount)}`}
-            />
-          )}
-          <Summary label="Paid" value={`${currency} ${money(invoice.paid_amount)}`} />
-          {String(invoice.payment_method || "").toUpperCase() === "CASH" &&
-            Number(invoice.change_amount ?? invoice.balance ?? 0) > 0 && (
-              <Summary
-                label="Change"
-                value={`${currency} ${money(invoice.change_amount ?? invoice.balance)}`}
-              />
-            )}
-          <Summary label="Due" value={`${currency} ${money(invoice.due_amount)}`} />
+        <div className="nv-summary">
+          <Summary label="Subtotal" value={`${currency} ${money(invoice.subtotal)}`} fontSize={nv(nonVatPs.total_font_size, 13)} />
+          {Number(invoice.discount || 0) > 0 && <Summary label="Discount" value={`${currency} ${money(invoice.discount)}`} fontSize={nv(nonVatPs.total_font_size, 13)} />}
+          <Summary label="Invoice Total" value={`${currency} ${money(invoice.total)}`} strong fontSize={nv(nonVatPs.total_font_size, 13)} />
+          {String(invoice.payment_method || "").toUpperCase() === "CASH" && <Summary label="Received Amount" value={`${currency} ${money(invoice.received_amount ?? invoice.paid_amount)}`} fontSize={nv(nonVatPs.total_font_size, 13)} />}
+          <Summary label="Paid" value={`${currency} ${money(invoice.paid_amount)}`} fontSize={nv(nonVatPs.total_font_size, 13)} />
+          {String(invoice.payment_method || "").toUpperCase() === "CASH" && Number(invoice.change_amount ?? invoice.balance ?? 0) > 0 && <Summary label="Change" value={`${currency} ${money(invoice.change_amount ?? invoice.balance)}`} fontSize={nv(nonVatPs.total_font_size, 13)} />}
+          <Summary label="Due" value={`${currency} ${money(invoice.due_amount)}`} fontSize={nv(nonVatPs.total_font_size, 13)} />
         </div>
 
-        {documentPrintSettings?.show_footer !== false &&
-          String(documentPrintSettings?.footer_text || "").trim() && (
-            <div
-              style={{
-                ...footerStyle,
-                fontSize: Number(documentPrintSettings?.footer_font_size || 9),
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {documentPrintSettings.footer_text}
-            </div>
-          )}
+        <footer className="nv-footer">
+          <strong>Thank you for your business.</strong>
+          {documentPrintSettings?.show_footer !== false && String(documentPrintSettings?.footer_text || "").trim() && <div className="nv-footer-text">{documentPrintSettings.footer_text}</div>}
+          <div className="nv-footer-rule" />
+          <div className="nv-footer-bottom"><span>{branch?.branch_name || companyName}</span><span>Computer Generated Invoice</span></div>
+        </footer>
       </div>
 
       <style>{`
-        @media print {
-          @page {
-            size: A4;
-            margin: 10mm;
-          }
-
-          html,
-          body,
-          #root {
-            width: 100% !important;
-            min-width: 0 !important;
-            min-height: 0 !important;
-            height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: visible !important;
-            background: #ffffff !important;
-          }
-
-          body * {
-            visibility: visible !important;
-          }
-
-          .public-no-print {
-            display: none !important;
-          }
-
-          .public-invoice-page {
-            display: block !important;
-            width: 100% !important;
-            min-height: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: visible !important;
-            background: #ffffff !important;
-          }
-
-          .public-invoice-card {
-            display: block !important;
-            width: 100% !important;
-            max-width: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            overflow: visible !important;
-            background: #ffffff !important;
-          }
-
-          img {
-            max-width: 100% !important;
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
-          }
-
-          table {
-            page-break-inside: auto;
-          }
-
-          tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
-          }
+        .nv-header{display:flex;justify-content:space-between;gap:30px;align-items:flex-start;padding-bottom:18px;margin-bottom:16px;border-bottom:3px solid #0f172a}
+        .nv-company{display:flex;gap:14px;align-items:flex-start;max-width:65%}.nv-logo{max-width:${nv(nonVatPs.logo_width,150)}px;max-height:${nv(nonVatPs.logo_height,64)}px;object-fit:contain}.nv-company h1{margin:0 0 6px;font-size:${nv(nonVatPs.title_font_size,25)}px;line-height:1.05;letter-spacing:.2px}.nv-company p{margin:0 0 5px;color:#334155;font-size:${nv(nonVatPs.header_font_size,12)}px;line-height:1.4}.nv-contact{display:flex;flex-direction:column;gap:2px;color:#475569;font-size:${nv(nonVatPs.header_font_size,12)}px}
+        .nv-document{text-align:right;min-width:180px}.nv-doc-title{font-size:${nv(nonVatPs.title_font_size,26)}px;font-weight:900;letter-spacing:1.2px}.nv-doc-number{margin-top:7px;font-size:${nv(nonVatPs.header_font_size,14)}px;font-weight:900}.nv-status{display:inline-block;margin-top:9px;padding:5px 10px;border:1px solid #cbd5e1;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.6px}
+        .nv-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:18px}.nv-table-wrap{overflow-x:auto}.nv-sku{display:block;margin-top:2px;color:#64748b;font-size:.82em}.nv-summary{width:min(350px,100%);margin:18px 0 0 auto;border-top:2px solid #0f172a}.nv-footer{margin-top:34px;padding-top:16px;text-align:center;color:#334155;font-size:${nv(nonVatPs.footer_font_size,10)}px}.nv-footer>strong{font-size:${Math.max(nv(nonVatPs.footer_font_size,10)+2,11)}px;color:#0f172a}.nv-footer-text{margin-top:7px;white-space:pre-wrap;line-height:1.5}.nv-footer-rule{border-top:1px solid #cbd5e1;margin:14px 0 7px}.nv-footer-bottom{display:flex;justify-content:space-between;gap:20px;color:#64748b;font-size:9px}
+        @media print{
+          @page{size:A4;margin:${nv(nonVatPs.page_margin_mm,10)}mm}
+          html,body,#root{width:100%!important;min-width:0!important;min-height:0!important;height:auto!important;margin:0!important;padding:0!important;overflow:visible!important;background:#fff!important}
+          body *{visibility:visible!important}
+          .public-no-print{display:none!important}
+          .public-invoice-page{display:block!important;position:static!important;width:100%!important;min-height:0!important;height:auto!important;margin:0!important;padding:0!important;background:#fff!important;overflow:visible!important}
+          .public-invoice-card{display:block!important;position:static!important;width:100%!important;max-width:none!important;min-height:0!important;height:auto!important;margin:0!important;padding:${nv(nonVatPs.document_padding,28)}px!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;background:#fff!important}
+          .nv-table-wrap{overflow:visible!important}table{page-break-inside:auto}tr{page-break-inside:avoid;page-break-after:auto}.nv-footer{break-inside:avoid;page-break-inside:avoid}img{print-color-adjust:exact;-webkit-print-color-adjust:exact}
         }
       `}</style>
     </div>
   );
 }
 
-function Info({ label, value }) {
+function Info({ label, value, fontSize = 15 }) {
   return (
     <div style={infoBoxStyle}>
-      <span style={{ fontSize: 15, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase" }}>
+      <span style={{ fontSize, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase" }}>
         {label}
       </span>
-      <strong style={{ fontSize: 15, marginTop: 4 }}>{value}</strong>
+      <strong style={{ fontSize, marginTop: 4 }}>{value}</strong>
     </div>
   );
 }
 
-function Summary({ label, value, strong = false }) {
+function Summary({ label, value, strong = false, fontSize = 15 }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", gap: 20, padding: "8px 0", borderBottom: "1px solid #eef2f7" }}>
-      <span style={{ color: "#64748b", fontSize: 17 }}>{label}</span>
-      <strong style={{ fontSize: strong ? 17 : 15 }}>{value}</strong>
+      <span style={{ color: "#64748b", fontSize }}>{label}</span>
+      <strong style={{ fontSize: strong ? fontSize + 2 : fontSize }}>{value}</strong>
     </div>
   );
 }
@@ -697,6 +575,12 @@ function TaxInvoiceLayout({ invoice, customer: customerProp, branch, settings, i
             {ps.show_notes !== false && invoice.notes && <div><b>Notes:</b> {invoice.notes}</div>}
           </div>
         )}
+        {ps.show_return_policy !== false &&
+          String(ps.return_policy || ps.policy_text || "").trim() && (
+            <div className="tax-policy" style={{ whiteSpace: "pre-wrap" }}>
+              {ps.return_policy || ps.policy_text}
+            </div>
+          )}
         {ps.show_footer !== false &&
           String(ps.footer_text || "").trim() && (
             <div className="tax-doc-footer" style={{ whiteSpace: "pre-wrap" }}>
@@ -736,7 +620,7 @@ function buildTaxDocumentCss(ps = {}) {
   const policyFont = n(ps.policy_font_size, 8);
   const pageMargin = n(ps.page_margin_mm, 10);
   const documentPadding = n(ps.document_padding, 25);
-  const titleWidth = Math.max(n(ps.title_width, 200), 180);
+  const titleWidth = n(ps.title_width, 200);
   const headerHeight = n(ps.header_height, 32);
   const partyHeight = n(ps.party_section_height, 105);
   const cellPadding = n(ps.table_cell_padding, 7);
@@ -744,7 +628,7 @@ function buildTaxDocumentCss(ps = {}) {
   return `
 .tax-doc-page{min-height:100vh;background:#f1f5f9;padding:20px;font-family:Arial,sans-serif;color:#000}
 .tax-doc-toolbar{max-width:794px;margin:0 auto 12px;display:flex;justify-content:space-between;align-items:center}
-.tax-doc-sheet{width:min(794px,100%);margin:auto;background:#fff;padding:28px ${documentPadding}px;box-sizing:border-box;position:relative}
+.tax-doc-sheet{width:min(794px,100%);margin:auto;background:#fff;padding:${documentPadding}px;box-sizing:border-box;position:relative}
 .tax-logo-row{text-align:right;min-height:${Math.max(headerHeight, logoHeight)}px;padding-right:8px}
 .tax-logo{width:auto;height:auto;max-width:${logoWidth}px;max-height:${logoHeight}px;object-fit:contain}
 .tax-logo-text{display:inline-block;font-size:8px;font-weight:900;letter-spacing:2px;padding:1px 3px}
@@ -765,11 +649,10 @@ function buildTaxDocumentCss(ps = {}) {
 @media print{
   @page{size:A4 portrait;margin:${pageMargin}mm}
   html,body,#root{margin:0!important;padding:0!important;width:100%!important;min-width:0!important;min-height:0!important;height:auto!important;overflow:visible!important;background:#fff!important}
-  body *{visibility:hidden!important}
-  .tax-doc-page,.tax-doc-page *{visibility:visible!important}
-  .public-no-print{display:none!important;visibility:hidden!important}
-  .tax-doc-page{position:absolute!important;left:0!important;top:0!important;width:100%!important;min-height:0!important;height:auto!important;margin:0!important;padding:0!important;background:#fff!important;overflow:visible!important}
-  .tax-doc-sheet{display:block!important;position:static!important;width:100%!important;max-width:none!important;min-height:0!important;height:auto!important;margin:0!important;padding:0 ${documentPadding}px!important;background:#fff!important;box-shadow:none!important;overflow:visible!important}
+  body *{visibility:visible!important}
+  .public-no-print{display:none!important}
+  .tax-doc-page{display:block!important;position:static!important;width:100%!important;min-height:0!important;height:auto!important;margin:0!important;padding:0!important;background:#fff!important;overflow:visible!important}
+  .tax-doc-sheet{display:block!important;position:static!important;width:100%!important;max-width:none!important;min-height:0!important;height:auto!important;margin:0!important;padding:${documentPadding}px!important;background:#fff!important;box-shadow:none!important;overflow:visible!important}
   .tax-items-table{page-break-inside:auto!important}
   .tax-items-table tr{page-break-inside:avoid!important;page-break-after:auto!important}
   img{print-color-adjust:exact;-webkit-print-color-adjust:exact}
